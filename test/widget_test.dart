@@ -1,30 +1,65 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:si_e_rapor_mts_al_fajar/app/app.dart';
 
-import 'package:si_e_rapor_mts_al_fajar/main.dart';
+import 'helpers/test_overrides.dart';
+
+Future<void> _login(WidgetTester tester, String username) async {
+  await tester.pumpWidget(
+    ProviderScope(overrides: testOverrides(), child: const EraporApp()),
+  );
+  await tester.pumpAndSettle();
+
+  await tester.enterText(
+      find.widgetWithText(TextFormField, 'Username'), username);
+  await tester.enterText(
+      find.widgetWithText(TextFormField, 'Password'), 'rahasia');
+  await tester.tap(find.widgetWithText(FilledButton, 'Masuk'));
+  await tester.pumpAndSettle();
+}
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('tanpa sesi, aplikasi membuka layar login', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(overrides: testOverrides(), child: const EraporApp()),
+    );
+    await tester.pumpAndSettle();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    expect(find.widgetWithText(FilledButton, 'Masuk'), findsOneWidget);
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+  testWidgets('guru biasa masuk ke beranda tanpa tab wali kelas',
+      (tester) async {
+    await _login(tester, 'guru');
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('Halo, Guru Contoh'), findsOneWidget);
+    expect(find.text('Nilai'), findsWidgets);
+    expect(find.text('Wali kelas'), findsNothing);
+  });
+
+  testWidgets('guru wali kelas melihat tab wali kelas', (tester) async {
+    await _login(tester, 'walikelas');
+
+    expect(find.text('Halo, Guru Wali Kelas'), findsOneWidget);
+    expect(find.text('Wali kelas'), findsWidgets);
+  });
+
+  testWidgets('password salah menampilkan pesan dan tetap di login',
+      (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(overrides: testOverrides(), child: const EraporApp()),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+        find.widgetWithText(TextFormField, 'Username'), 'tidak-ada');
+    await tester.enterText(
+        find.widgetWithText(TextFormField, 'Password'), 'x');
+    await tester.tap(find.widgetWithText(FilledButton, 'Masuk'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Username atau password salah.'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'Masuk'), findsOneWidget);
   });
 }
