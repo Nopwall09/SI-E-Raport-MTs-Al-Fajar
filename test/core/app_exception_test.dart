@@ -1,64 +1,83 @@
-import 'package:dio/dio.dart';
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:si_e_rapor_mts_al_fajar/core/error/app_exception.dart';
-
-DioException _badResponse(int status, [Object? data]) {
-  final options = RequestOptions(path: '/x');
-  return DioException(
-    requestOptions: options,
-    type: DioExceptionType.badResponse,
-    response: Response<dynamic>(
-      requestOptions: options,
-      statusCode: status,
-      data: data,
-    ),
-  );
-}
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
-  group('AppException.fromDio', () {
-    test('422 membawa pesan dan error per kolom', () {
-      final error = AppException.fromDio(_badResponse(422, {
-        'message': 'Data tidak valid',
-        'errors': {
-          'username': ['Username wajib diisi'],
-        },
-      }));
-      expect(error.type, AppErrorType.validation);
-      expect(error.message, 'Data tidak valid');
-      expect(error.fieldErrors['username'], ['Username wajib diisi']);
+  group('AppException.from (Postgres)', () {
+    test('42501 (ditolak RLS) menjadi forbidden', () {
+      final error = AppException.from(
+        PostgrestException(message: 'denied', code: '42501'),
+      );
+      expect(error.type, AppErrorType.forbidden);
     });
 
-    test('401, 403, 409 dipetakan sesuai konvensi API', () {
-      expect(AppException.fromDio(_badResponse(401)).type,
-          AppErrorType.unauthorized);
-      expect(AppException.fromDio(_badResponse(403)).type,
-          AppErrorType.forbidden);
-      expect(AppException.fromDio(_badResponse(409)).type,
-          AppErrorType.conflict);
+    test('P0001 membawa pesan dari trigger sebagai conflict', () {
+      final error = AppException.from(
+        PostgrestException(
+          message: 'Rapor sudah final dan tidak bisa diubah.',
+          code: 'P0001',
+        ),
+      );
+      expect(error.type, AppErrorType.conflict);
+      expect(error.message, 'Rapor sudah final dan tidak bisa diubah.');
     });
 
-    test('5xx dipetakan ke server', () {
+    test('23505 menjadi conflict, 23514 menjadi validation', () {
       expect(
-          AppException.fromDio(_badResponse(503)).type, AppErrorType.server);
+        AppException.from(
+          PostgrestException(message: 'dup', code: '23505'),
+        ).type,
+        AppErrorType.conflict,
+      );
+      expect(
+        AppException.from(
+          PostgrestException(message: 'check', code: '23514'),
+        ).type,
+        AppErrorType.validation,
+      );
     });
 
-    test('timeout dan koneksi putus dibedakan', () {
-      final options = RequestOptions(path: '/x');
+    test('JWT kedaluwarsa menjadi unauthorized', () {
+      final error = AppException.from(
+        PostgrestException(message: 'JWT expired', code: 'PGRST301'),
+      );
+      expect(error.type, AppErrorType.unauthorized);
+    });
+
+    test('kode tak dikenal menjadi server', () {
+      final error = AppException.from(
+        PostgrestException(message: 'boom', code: 'XX000'),
+      );
+      expect(error.type, AppErrorType.server);
+    });
+  });
+
+  group('AppException.from (lainnya)', () {
+    test('kredensial salah dari Auth menjadi unauthorized', () {
+      final error = AppException.from(
+        AuthException('Invalid login credentials', statusCode: '400'),
+      );
+      expect(error.type, AppErrorType.unauthorized);
+      expect(error.message, 'Username atau password salah.');
+    });
+
+    test('timeout dan socket dibedakan', () {
       expect(
-        AppException.fromDio(DioException(
-          requestOptions: options,
-          type: DioExceptionType.receiveTimeout,
-        )).type,
+        AppException.from(TimeoutException('lama')).type,
         AppErrorType.timeout,
       );
       expect(
-        AppException.fromDio(DioException(
-          requestOptions: options,
-          type: DioExceptionType.connectionError,
-        )).type,
+        AppException.from(SocketException('putus')).type,
         AppErrorType.network,
       );
+    });
+
+    test('AppException dilewatkan apa adanya', () {
+      const original = AppException(AppErrorType.conflict, 'x');
+      expect(identical(AppException.from(original), original), isTrue);
     });
   });
 }

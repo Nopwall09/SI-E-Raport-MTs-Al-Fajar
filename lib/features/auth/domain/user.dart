@@ -19,7 +19,7 @@ enum UserRole {
 }
 
 /// Wali kelas bukan role di server, melainkan penugasan seorang guru.
-/// Karena itu `/auth/me` harus menyertakan info ini.
+/// Karena itu `get_my_profile()` harus menyertakan info ini.
 class WaliKelasInfo {
   const WaliKelasInfo({required this.kelasId, required this.namaKelas});
 
@@ -42,7 +42,7 @@ class AppUser {
     this.waliKelas,
   });
 
-  final int id;
+  final String id;
   final String name;
   final UserRole role;
   final WaliKelasInfo? waliKelas;
@@ -54,7 +54,7 @@ class AppUser {
   factory AppUser.fromJson(Map<String, dynamic> json) {
     final waliKelas = json['wali_kelas'];
     return AppUser(
-      id: json['id'] as int,
+      id: json['id'] as String,
       name: json['name'] as String,
       role: UserRole.fromApi(json['role'] as String),
       waliKelas: waliKelas is Map<String, dynamic>

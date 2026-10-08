@@ -1,6 +1,7 @@
+import 'dart:async' show TimeoutException;
 import 'dart:io' show SocketException;
 
-import 'package:dio/dio.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 enum AppErrorType {
   network,
@@ -13,109 +14,95 @@ enum AppErrorType {
   unknown,
 }
 
-/// Error yang aman ditampilkan ke pengguna. Layar tidak perlu tahu soal Dio.
+/// Error yang aman ditampilkan ke pengguna. Layar tidak perlu tahu soal
+/// Supabase atau Postgres.
 ///
-/// Pemetaan mengikuti konvensi API: 401 sesi habis, 403 ditolak Policy,
-/// 409 data sudah dikunci (rapor final), 422 validasi gagal.
+/// Pemetaan kode Postgres:
+///   42501  ditolak RLS (bukan haknya)         -> forbidden
+///   P0001  `raise exception` dari trigger/RPC -> conflict (mis. rapor final)
+///   23505  nilai unik ganda                   -> conflict
+///   23514  melanggar CHECK (mis. nilai 0-100) -> validation
+///   PGRST301  JWT kedaluwarsa                 -> unauthorized
 class AppException implements Exception {
-  const AppException(
-    this.type,
-    this.message, {
-    this.fieldErrors = const {},
-  });
+  const AppException(this.type, this.message);
 
   final AppErrorType type;
   final String message;
-  final Map<String, List<String>> fieldErrors;
 
-  factory AppException.fromDio(DioException e) {
-    switch (e.type) {
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.sendTimeout:
-      case DioExceptionType.receiveTimeout:
-        return const AppException(
-          AppErrorType.timeout,
-          'Server terlalu lama merespons. Coba lagi sebentar lagi.',
-        );
-      case DioExceptionType.connectionError:
-        return const AppException(
-          AppErrorType.network,
-          'Tidak ada koneksi. Periksa internet lalu coba lagi.',
-        );
-      case DioExceptionType.badResponse:
-        return _fromResponse(e.response);
-      case DioExceptionType.cancel:
-      case DioExceptionType.badCertificate:
-      case DioExceptionType.unknown:
-        if (e.error is SocketException) {
-          return const AppException(
-            AppErrorType.network,
-            'Tidak ada koneksi. Periksa internet lalu coba lagi.',
-          );
-        }
-        return const AppException(
-          AppErrorType.unknown,
-          'Terjadi kesalahan. Coba lagi.',
-        );
+  /// Satu pintu untuk semua error mentah dari lapisan data.
+  factory AppException.from(Object error) {
+    if (error is AppException) return error;
+    if (error is AuthRetryableFetchException) return _network;
+    if (error is AuthException) return _fromAuth(error);
+    if (error is PostgrestException) return _fromPostgrest(error);
+    if (error is TimeoutException) {
+      return const AppException(
+        AppErrorType.timeout,
+        'Server terlalu lama merespons. Coba lagi sebentar lagi.',
+      );
     }
+    if (error is SocketException) return _network;
+    if (error is TypeError || error is FormatException) {
+      return const AppException(
+        AppErrorType.unknown,
+        'Respons server tidak sesuai. Hubungi tim pengembang.',
+      );
+    }
+    return const AppException(
+      AppErrorType.unknown,
+      'Terjadi kesalahan. Coba lagi.',
+    );
   }
 
-  static AppException _fromResponse(Response<dynamic>? response) {
-    final status = response?.statusCode ?? 0;
-    final data = response?.data;
-    final serverMessage = _readMessage(data);
+  static const _network = AppException(
+    AppErrorType.network,
+    'Tidak ada koneksi. Periksa internet lalu coba lagi.',
+  );
 
-    switch (status) {
-      case 401:
-        return AppException(
-          AppErrorType.unauthorized,
-          serverMessage ?? 'Sesi berakhir. Silakan masuk lagi.',
-        );
-      case 403:
+  static AppException _fromAuth(AuthException error) {
+    final status = error.statusCode;
+    if (status == '400' || status == '401' || status == '422') {
+      return const AppException(
+        AppErrorType.unauthorized,
+        'Username atau password salah.',
+      );
+    }
+    return const AppException(
+      AppErrorType.unknown,
+      'Terjadi kesalahan saat masuk. Coba lagi.',
+    );
+  }
+
+  static AppException _fromPostgrest(PostgrestException error) {
+    switch (error.code) {
+      case '42501':
         return const AppException(
           AppErrorType.forbidden,
           'Kamu tidak punya akses ke data ini.',
         );
-      case 409:
-        return AppException(
-          AppErrorType.conflict,
-          serverMessage ?? 'Data sudah dikunci dan tidak bisa diubah.',
+      case 'PGRST301':
+        return const AppException(
+          AppErrorType.unauthorized,
+          'Sesi berakhir. Silakan masuk lagi.',
         );
-      case 422:
-        return AppException(
+      case 'P0001':
+        return AppException(AppErrorType.conflict, error.message);
+      case '23505':
+        return const AppException(
+          AppErrorType.conflict,
+          'Data ini sudah ada.',
+        );
+      case '23514':
+        return const AppException(
           AppErrorType.validation,
-          serverMessage ?? 'Data belum valid. Periksa isian lalu coba lagi.',
-          fieldErrors: _readFieldErrors(data),
+          'Data belum sesuai aturan. Periksa isian lalu coba lagi.',
         );
       default:
-        if (status >= 500) {
-          return const AppException(
-            AppErrorType.server,
-            'Server sedang bermasalah. Coba lagi nanti.',
-          );
-        }
         return const AppException(
-          AppErrorType.unknown,
-          'Terjadi kesalahan. Coba lagi.',
+          AppErrorType.server,
+          'Server sedang bermasalah. Coba lagi nanti.',
         );
     }
-  }
-
-  static String? _readMessage(Object? data) {
-    if (data is! Map<String, dynamic>) return null;
-    final message = data['message'];
-    return message is String && message.isNotEmpty ? message : null;
-  }
-
-  static Map<String, List<String>> _readFieldErrors(Object? data) {
-    if (data is! Map<String, dynamic>) return const {};
-    final errors = data['errors'];
-    if (errors is! Map<String, dynamic>) return const {};
-    return {
-      for (final entry in errors.entries)
-        if (entry.value is List)
-          entry.key: [for (final m in entry.value as List) m.toString()],
-    };
   }
 
   @override

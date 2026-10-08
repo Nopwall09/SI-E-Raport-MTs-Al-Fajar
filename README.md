@@ -1,32 +1,34 @@
-# E-Raport MTs Al Fajar (mobile)
+﻿# E-Raport MTs Al Fajar (mobile)
 
-Aplikasi mobile Flutter untuk sistem E-Raport dan Portal Wali Murid
-MTs Al Fajar Kandat. Web dan API dikerjakan terpisah di Laravel.
+Aplikasi Flutter (Android) untuk sistem E-Raport dan Portal Wali Murid
+MTs Al Fajar Kandat. Backend memakai Supabase (Auth, Postgres + RLS, Edge
+Functions, Storage). Tidak ada server backend sendiri dan tidak ada web.
 
-Skeleton ini mencakup target Sprint 1 sisi mobile: struktur folder, API client,
-login dengan token aman, dan shell navigasi per role. Fitur penilaian dan
-rapor masih berupa halaman sementara.
+Skeleton ini mencakup target Sprint 1 sisi aplikasi: struktur folder, login,
+router dan shell navigasi per role. Fitur penilaian, rapor, dan layar admin
+masih berupa halaman sementara.
 
 ## Menjalankan
 
 ```bash
 flutter pub get
-flutter run                       # data contoh, tanpa backend
+flutter run                       # data contoh, tanpa Supabase
 ```
 
 Akun contoh (password bebas, asal tidak kosong):
 `admin`, `guru`, `walikelas`, `siswa`, `wali`.
 
-Memakai API asli:
+Memakai Supabase asli:
 
 ```bash
 flutter run \
   --dart-define=USE_FAKE_API=false \
-  --dart-define=API_BASE_URL=http://10.0.2.2:8000/api/v1
+  --dart-define=SUPABASE_URL=https://xxxx.supabase.co \
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=eyJ...
 ```
 
-`10.0.2.2` adalah alamat localhost laptop dari emulator Android. Di HP fisik,
-pakai IP laptop di jaringan yang sama.
+Anon key boleh ada di aplikasi karena keamanan dijaga RLS. Service role key
+tidak boleh pernah masuk ke aplikasi atau repo.
 
 ## Struktur
 
@@ -34,35 +36,40 @@ pakai IP laptop di jaringan yang sama.
 lib/
   main.dart
   app/        app, tema, router, shell navigasi, daftar tab per role
-  core/       config, error, network (Dio), storage token, widget bersama
+  core/       config, error, provider Supabase, widget bersama
   features/
     auth/         domain/ data/ presentation/
     dashboard/    presentation/
 ```
 
-Aturan: layar tidak memanggil Dio langsung. Layar memakai controller, controller
-memakai repository, dan repository yang berbicara dengan API. Setiap repository
-punya implementasi asli (`Api...`) dan contoh (`Fake...`), dipilih di satu
-tempat (`authRepositoryProvider`).
+Aturan: layar tidak memanggil Supabase langsung. Layar memakai controller,
+controller memakai repository, dan repository yang berbicara dengan Supabase.
+Setiap repository punya implementasi asli (`Supabase...`) dan contoh
+(`Fake...`), dipilih di satu tempat (`authRepositoryProvider`).
 
-## Kontrak API yang diasumsikan
+## Kontrak backend yang diasumsikan
 
-Konfirmasi dengan jalur backend sebelum menyambungkan API asli.
+Konfirmasi saat skema Postgres dibuat.
 
-| Endpoint | Respons |
-| --- | --- |
-| `POST /auth/login` `{username, password, device_name}` | `200 {"data": {"token", "user": {...}}}` |
-| `GET /auth/me` | `200 {"data": {"id", "name", "role", "wali_kelas": null atau {"kelas_id", "nama"}}}` |
-| `POST /auth/logout` | `200` atau `204` |
+- **Login:** pengguna mengetik username, aplikasi masuk ke Supabase Auth dengan
+  email `username@<AUTH_EMAIL_DOMAIN>`. Akun dibuat Admin TU lewat Edge
+  Function, dengan email dan domain yang sama.
+- **`get_my_profile()`** (fungsi Postgres) mengembalikan json untuk pengguna
+  yang login: `{"id": "<uuid>", "name": "...", "role": "guru", "wali_kelas":
+  null atau {"kelas_id": 3, "nama": "7A"}}`. `role` bernilai `admin`, `guru`,
+  `siswa`, atau `wali_murid`. Wali kelas bukan role, jadi `wali_kelas` wajib
+  ada agar menu wali kelas muncul.
+- **Kode error Postgres** dipetakan ke pesan pengguna: `42501` (ditolak RLS),
+  `P0001` (aturan bisnis dari trigger/RPC, pesannya ditampilkan apa adanya,
+  mis. rapor sudah final), `23505` (data ganda), `23514` (melanggar CHECK).
 
-`role` bernilai `admin`, `guru`, `siswa`, atau `wali_murid`. Wali kelas bukan
-role, jadi `wali_kelas` wajib ada di `/auth/me` agar menu wali kelas muncul.
-Error mengikuti konvensi: 401 sesi habis, 403 ditolak, 409 rapor sudah final,
-422 validasi (`{"message", "errors": {kolom: [pesan]}}`).
+Sesi disimpan oleh `supabase_flutter` (secara bawaan di penyimpanan privat
+aplikasi) dan token di-refresh otomatis. Bila nanti dibutuhkan penyimpanan
+terenkripsi, ganti `LocalStorage` lewat `FlutterAuthClientOptions`.
 
 ## Merapikan repo (sekali saja)
 
-Web sudah dipegang Laravel, jadi platform yang tidak dipakai bisa dihapus:
+Web dan desktop tidak dipakai, jadi bisa dihapus:
 
 ```bash
 rm -rf web windows linux macos

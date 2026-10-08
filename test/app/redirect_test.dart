@@ -3,9 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:si_e_rapor_mts_al_fajar/app/router.dart';
 import 'package:si_e_rapor_mts_al_fajar/features/auth/domain/user.dart';
 
-const _guru = AppUser(id: 1, name: 'Guru', role: UserRole.guru);
+const _guru = AppUser(id: 'g1', name: 'Guru', role: UserRole.guru);
 const _waliKelas = AppUser(
-  id: 2,
+  id: 'g2',
   name: 'Wali',
   role: UserRole.guru,
   waliKelas: WaliKelasInfo(kelasId: 1, namaKelas: '7A'),

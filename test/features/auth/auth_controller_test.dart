@@ -1,21 +1,21 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:si_e_rapor_mts_al_fajar/core/error/app_exception.dart';
-import 'package:si_e_rapor_mts_al_fajar/core/storage/token_storage.dart';
 import 'package:si_e_rapor_mts_al_fajar/features/auth/domain/user.dart';
 import 'package:si_e_rapor_mts_al_fajar/features/auth/presentation/auth_controller.dart';
 
 import '../../helpers/test_overrides.dart';
 
 void main() {
-  ProviderContainer makeContainer([InMemoryTokenStorage? storage]) {
-    final container =
-        ProviderContainer(overrides: testOverrides(storage: storage));
+  ProviderContainer makeContainer({String? signedInAs}) {
+    final container = ProviderContainer(
+      overrides: testOverrides(signedInAs: signedInAs),
+    );
     addTearDown(container.dispose);
     return container;
   }
 
-  test('tanpa token tersimpan, pengguna belum masuk', () async {
+  test('tanpa sesi tersimpan, pengguna belum masuk', () async {
     final container = makeContainer();
     expect(await container.read(authControllerProvider.future), isNull);
   });
@@ -64,18 +64,15 @@ void main() {
   });
 
   test('sesi tersimpan dipulihkan saat aplikasi dibuka lagi', () async {
-    final storage = InMemoryTokenStorage();
-    await storage.write('fake:siswa');
-    final container = makeContainer(storage);
+    final container = makeContainer(signedInAs: 'siswa');
 
     final user = await container.read(authControllerProvider.future);
 
     expect(user?.role, UserRole.siswa);
   });
 
-  test('logout menghapus sesi dan token', () async {
-    final storage = InMemoryTokenStorage();
-    final container = makeContainer(storage);
+  test('logout mengakhiri sesi', () async {
+    final container = makeContainer();
     await container.read(authControllerProvider.future);
     final notifier = container.read(authControllerProvider.notifier);
 
@@ -83,6 +80,5 @@ void main() {
     await notifier.logout();
 
     expect(container.read(authControllerProvider).value, isNull);
-    expect(await storage.read(), isNull);
   });
 }

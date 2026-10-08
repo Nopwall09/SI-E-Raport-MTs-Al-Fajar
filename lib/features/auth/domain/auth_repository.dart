@@ -5,12 +5,15 @@ abstract class AuthRepository {
   Future<AppUser> login({
     required String username,
     required String password,
-    required String deviceName,
   });
 
-  /// Mengembalikan null bila belum ada sesi atau token sudah tidak berlaku.
+  /// Mengembalikan null bila belum ada sesi atau sesi sudah tidak berlaku.
   Future<AppUser?> restoreSession();
 
-  /// Selalu menghapus token lokal, walau permintaan ke server gagal.
+  /// Selalu mengakhiri sesi lokal, walau permintaan ke server gagal.
   Future<void> logout();
+
+  /// Terpancar saat sesi berakhir di luar kendali pengguna, misalnya refresh
+  /// token gagal atau akun dinonaktifkan.
+  Stream<void> get onSignedOut;
 }
