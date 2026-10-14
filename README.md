@@ -6,9 +6,16 @@ Functions, Storage). Tidak ada server backend sendiri dan tidak ada web.
 
 Status saat ini: struktur folder, login, router, dan shell navigasi per role
 (target Sprint 1) sudah jalan. Layar admin (beranda, siswa, guru, kelas,
-pengguna) sudah tersambung ke Supabase dan bisa menambah data. Layar guru
-(beranda, input nilai UTS, progres wali kelas) juga sudah jalan. Layar siswa,
-wali murid, dan rapor masih berupa halaman sementara.
+pengguna) sudah tersambung ke Supabase. Siswa dan kelas bisa ditambah, diubah,
+dan dihapus (kelas hanya bila kosong); guru bisa ditambah dan diubah; akun
+pengguna bisa dibuat, dinonaktifkan, dan diaktifkan lagi (tidak dihapus,
+karena menghapus akun Auth butuh service role). Layar guru (beranda, input
+nilai UTS, progres wali kelas) juga sudah jalan. Layar siswa, wali murid, dan
+rapor masih berupa halaman sementara.
+
+`landing/` berisi halaman profil statis (HTML dan CSS tanpa build) untuk
+memperkenalkan aplikasi. Tautan unduh APK diisi di `data-apk-url` pada
+`landing/index.html`.
 
 Skema database, Edge Function pembuat akun, dan data contoh ada di
 `supabase/` (lihat `supabase/README.md`).
