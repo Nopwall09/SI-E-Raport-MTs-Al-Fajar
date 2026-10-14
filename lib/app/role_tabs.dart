@@ -4,6 +4,7 @@ import '../core/widgets/placeholder_page.dart';
 import '../features/auth/domain/user.dart';
 import '../features/auth/presentation/profile_page.dart';
 import '../features/dashboard/presentation/dashboard_page.dart';
+import '../features/dashboard/presentation/guru_beranda_page.dart';
 import '../features/nilai/presentation/nilai_page.dart';
 import '../features/wali_kelas/presentation/wali_kelas_page.dart';
 import '../screens/admin/admin_dashboard_screen.dart';
@@ -95,7 +96,13 @@ List<AppTab> tabsFor(UserRole role) {
       ];
     case UserRole.guru:
       return [
-        _beranda(),
+        AppTab(
+          slug: 'beranda',
+          label: 'Beranda',
+          icon: Icons.home_outlined,
+          selectedIcon: Icons.home,
+          builder: () => const GuruBerandaPage(),
+        ),
         AppTab(
           slug: 'nilai',
           label: 'Nilai',

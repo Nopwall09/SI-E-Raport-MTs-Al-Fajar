@@ -30,8 +30,17 @@ class SiswaNilai {
   final num? nilai;
 }
 
-/// Akses data input nilai. RLS membatasi guru hanya pada kelas+mapel
-/// yang diampunya, jadi query tidak perlu menyaring guru lagi.
+/// Penugasan beserta jumlah nilai yang sudah masuk dari seluruh siswa kelas.
+class PenugasanProgres {
+  const PenugasanProgres(this.penugasan, this.terisi, this.total);
+
+  final Penugasan penugasan;
+  final int terisi;
+  final int total;
+}
+
+/// Akses data input nilai. Penugasan disaring ke guru yang login; nilai
+/// dibatasi RLS pada kelas+mapel yang diampu.
 class NilaiRepository {
   NilaiRepository(this._db);
 
@@ -40,8 +49,11 @@ class NilaiRepository {
   Future<List<Penugasan>> penugasanSaya(int tahunAjaranId) async {
     final rows = await _db
         .from('penugasan_mengajar')
-        .select('kelas_id,mapel_id,kelas!inner(nama,tahun_ajaran_id),mapel(nama)')
-        .eq('kelas.tahun_ajaran_id', tahunAjaranId);
+        .select('kelas_id,mapel_id,kelas!inner(nama,tahun_ajaran_id),'
+            'mapel(nama),guru!inner(user_id)')
+        .eq('kelas.tahun_ajaran_id', tahunAjaranId)
+        // Wali kelas juga bisa membaca penugasan guru lain di kelasnya.
+        .eq('guru.user_id', _db.auth.currentUser!.id);
     final hasil = [
       for (final r in rows)
         Penugasan(
@@ -111,5 +123,43 @@ class NilaiRepository {
       ],
       onConflict: 'kelas_siswa_id,mapel_id,semester',
     );
+  }
+
+  /// Progres input per penugasan. Jumlah siswa dan nilai dihitung di sisi
+  /// klien: datanya kecil (satu sekolah) dan tetap dibatasi RLS.
+  Future<List<PenugasanProgres>> progres({
+    required int tahunAjaranId,
+    required String semester,
+  }) async {
+    final hasil = await Future.wait<dynamic>([
+      penugasanSaya(tahunAjaranId),
+      _db
+          .from('kelas_siswa')
+          .select('kelas_id')
+          .eq('tahun_ajaran_id', tahunAjaranId),
+      _db
+          .from('detnilai')
+          .select('mapel_id,kelas_siswa!inner(kelas_id)')
+          .eq('semester', semester)
+          .eq('kelas_siswa.tahun_ajaran_id', tahunAjaranId),
+    ]);
+    final penugasan = hasil[0] as List<Penugasan>;
+    final siswaPerKelas = <int, int>{};
+    for (final r in hasil[1] as List) {
+      siswaPerKelas.update(r['kelas_id'] as int, (n) => n + 1, ifAbsent: () => 1);
+    }
+    final nilaiPerKelasMapel = <(int, int), int>{};
+    for (final r in hasil[2] as List) {
+      final k = (r['kelas_siswa']['kelas_id'] as int, r['mapel_id'] as int);
+      nilaiPerKelasMapel.update(k, (n) => n + 1, ifAbsent: () => 1);
+    }
+    return [
+      for (final p in penugasan)
+        PenugasanProgres(
+          p,
+          nilaiPerKelasMapel[(p.kelasId, p.mapelId)] ?? 0,
+          siswaPerKelas[p.kelasId] ?? 0,
+        ),
+    ];
   }
 }

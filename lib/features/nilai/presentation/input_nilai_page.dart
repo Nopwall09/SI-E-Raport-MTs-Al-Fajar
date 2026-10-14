@@ -77,6 +77,7 @@ class _InputNilaiPageState extends ConsumerState<InputNilaiPage> {
       _awal.addAll({for (final e in berubah.entries) e.key: _teks(e.value)});
       ref.invalidate(siswaNilaiProvider(_kunci));
       ref.invalidate(adminProgresProvider);
+      ref.invalidate(progresPenugasanProvider);
     }
   }
 

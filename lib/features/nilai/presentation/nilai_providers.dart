@@ -24,3 +24,11 @@ final siswaNilaiProvider =
         semester: ta.semester,
       );
 });
+
+final progresPenugasanProvider =
+    FutureProvider<List<PenugasanProgres>>((ref) async {
+  final ta = await ref.watch(tahunAjaranAktifProvider.future);
+  return ref
+      .watch(nilaiRepositoryProvider)
+      .progres(tahunAjaranId: ta.id, semester: ta.semester);
+});
