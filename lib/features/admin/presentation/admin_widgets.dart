@@ -33,7 +33,82 @@ Future<bool> simpan(
     messenger.showSnackBar(SnackBar(content: Text(sukses)));
     return true;
   } catch (e) {
-    messenger.showSnackBar(SnackBar(content: Text(AppException.from(e).message)));
+    messenger.showSnackBar(
+      SnackBar(content: Text(AppException.from(e).message)),
+    );
     return false;
+  }
+}
+
+/// Dialog konfirmasi aksi yang tidak bisa dibatalkan. true bila dilanjutkan.
+Future<bool> konfirmasiHapus(
+  BuildContext context, {
+  required String judul,
+  required String isi,
+}) async {
+  final ya = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(judul),
+      content: Text(isi),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: const Text('Batal'),
+        ),
+        TextButton(
+          style: TextButton.styleFrom(
+            foregroundColor: Theme.of(ctx).colorScheme.error,
+          ),
+          onPressed: () => Navigator.pop(ctx, true),
+          child: const Text('Hapus'),
+        ),
+      ],
+    ),
+  );
+  return ya ?? false;
+}
+
+/// Dua tombol di dasar sheet detail: Hapus (outline) dan Ubah (utama).
+class AksiUbahHapus extends StatelessWidget {
+  const AksiUbahHapus({
+    super.key,
+    required this.onUbah,
+    this.onHapus,
+    this.hapusLabel = 'Hapus',
+  });
+
+  final VoidCallback onUbah;
+  final VoidCallback? onHapus;
+  final String hapusLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final error = Theme.of(context).colorScheme.error;
+    return Row(
+      children: [
+        if (onHapus != null) ...[
+          Expanded(
+            child: OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: error,
+                side: BorderSide(color: error.withValues(alpha: 0.5)),
+              ),
+              onPressed: onHapus,
+              icon: const Icon(Icons.delete_outline, size: 18),
+              label: Text(hapusLabel),
+            ),
+          ),
+          const SizedBox(width: 12),
+        ],
+        Expanded(
+          child: FilledButton.icon(
+            onPressed: onUbah,
+            icon: const Icon(Icons.edit_outlined, size: 18),
+            label: const Text('Ubah'),
+          ),
+        ),
+      ],
+    );
   }
 }

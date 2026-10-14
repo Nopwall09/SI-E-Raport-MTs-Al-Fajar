@@ -1,10 +1,11 @@
 class KelasModel {
   final String id;
   final String namaKelas; // Contoh: "VII-A"
-  final String tingkat;   // Contoh: "VII", "VIII", "IX"
-  final String namaWali;  // Contoh: "Ust. Zulkifli, S.Pd.I"
-  final int jumlahSiswa;  // Contoh: 32
-  final int kapasitas;    // Contoh: 34
+  final String tingkat; // Contoh: "VII", "VIII", "IX"
+  final String namaWali; // Contoh: "Ust. Zulkifli, S.Pd.I"
+  final int jumlahSiswa; // Contoh: 32
+  final int kapasitas; // Contoh: 34
+  final int? waliKelasId; // Dipakai form ubah.
 
   const KelasModel({
     required this.id,
@@ -13,5 +14,6 @@ class KelasModel {
     required this.namaWali,
     required this.jumlahSiswa,
     this.kapasitas = 36,
+    this.waliKelasId,
   });
 }

@@ -8,11 +8,13 @@ class UserModel {
   final String nama;
   final String email;
   final UserRole role;
+  final bool aktif;
 
   const UserModel({
     required this.id,
     required this.nama,
     required this.email,
     required this.role,
+    this.aktif = true,
   });
 }

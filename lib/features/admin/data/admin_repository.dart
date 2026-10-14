@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/error/app_exception.dart';
 import '../../../models/dashboard_model.dart';
 import '../../../models/guru_model.dart';
 import '../../../models/kelas_model.dart';
@@ -39,8 +40,11 @@ class AdminRepository {
         .eq('is_active', true)
         .maybeSingle();
     if (row == null) throw const FormatException('Tahun ajaran aktif kosong');
-    return TahunAjaranAktif(row['id'] as int, row['tahun'] as String,
-        row['semester_aktif'] as String);
+    return TahunAjaranAktif(
+      row['id'] as int,
+      row['tahun'] as String,
+      row['semester_aktif'] as String,
+    );
   }
 
   Future<DashboardStatistik> statistik() async {
@@ -83,8 +87,10 @@ class AdminRepository {
     final ta = await tahunAjaranAktif();
     final rows = await _db
         .from('siswa')
-        .select('id,nama,nis,nisn,jk,wali_murid(nama),'
-            'kelas_siswa(tahun_ajaran_id,kelas(nama))')
+        .select(
+          'id,nama,nis,nisn,jk,tgl_lahir,wali_murid_id,wali_murid(nama),'
+          'kelas_siswa(tahun_ajaran_id,kelas_id,kelas(nama))',
+        )
         .order('nama');
     return [
       for (final r in rows)
@@ -95,6 +101,11 @@ class AdminRepository {
           kelas: _kelasSiswaAktif(r['kelas_siswa'], ta.id) ?? '-',
           jenisKelamin: r['jk'] as String,
           namaWali: _nama(r['wali_murid']) ?? '',
+          nis: r['nis'] as String,
+          nisnAsli: r['nisn'] as String?,
+          tglLahir: DateTime.parse(r['tgl_lahir'] as String),
+          kelasId: _kelasIdAktif(r['kelas_siswa'], ta.id),
+          waliMuridId: r['wali_murid_id'] as int?,
         ),
     ];
   }
@@ -103,9 +114,11 @@ class AdminRepository {
     final ta = await tahunAjaranAktif();
     final rows = await _db
         .from('guru')
-        .select('id,nama,nip,no_hp,users(email),'
-            'penugasan_mengajar(mapel(nama)),'
-            'kelas!wali_kelas_id(nama,tahun_ajaran_id)')
+        .select(
+          'id,nama,nip,no_hp,users(email),'
+          'penugasan_mengajar(mapel(nama)),'
+          'kelas!wali_kelas_id(nama,tahun_ajaran_id)',
+        )
         .order('nama');
     return [
       for (final r in rows)
@@ -126,7 +139,9 @@ class AdminRepository {
     final rows = await _db
         .from('kelas')
         .select(
-            'id,nama,tingkat(nama),guru!wali_kelas_id(nama),kelas_siswa(count)')
+          'id,nama,wali_kelas_id,tingkat(nama),guru!wali_kelas_id(nama),'
+          'kelas_siswa(count)',
+        )
         .eq('tahun_ajaran_id', ta.id)
         .order('tingkat_id')
         .order('nama');
@@ -138,6 +153,7 @@ class AdminRepository {
           tingkat: _romawi[r['tingkat']['nama']] ?? '${r['tingkat']['nama']}',
           namaWali: _nama(r['guru']) ?? '-',
           jumlahSiswa: (r['kelas_siswa'] as List).first['count'] as int,
+          waliKelasId: r['wali_kelas_id'] as int?,
         ),
     ];
   }
@@ -146,18 +162,21 @@ class AdminRepository {
     final rows = await _db
         .from('users')
         .select(
-            'id,username,role,guru(nama),siswa(nama),wali_murid(nama)')
+          'id,username,role,is_active,guru(nama),siswa(nama),wali_murid(nama)',
+        )
         .order('username');
     return [
       for (final r in rows)
         UserModel(
           id: r['id'] as String,
-          nama: _nama(r['guru']) ??
+          nama:
+              _nama(r['guru']) ??
               _nama(r['siswa']) ??
               _nama(r['wali_murid']) ??
               r['username'] as String,
           email: r['username'] as String, // yang dipakai untuk login
           role: UserRole.fromApi(r['role'] as String),
+          aktif: r['is_active'] as bool,
         ),
     ];
   }
@@ -188,15 +207,55 @@ class AdminRepository {
     int? waliKelasId,
   }) async {
     final ta = await tahunAjaranAktif();
-    final angka = _romawi.entries.firstWhere((e) => e.value == tingkat).key;
-    final tk =
-        await _db.from('tingkat').select('id').eq('nama', angka).single();
     await _db.from('kelas').insert({
       'tahun_ajaran_id': ta.id,
-      'tingkat_id': tk['id'],
+      'tingkat_id': await _tingkatId(tingkat),
       'nama': nama,
       'wali_kelas_id': waliKelasId,
     });
+  }
+
+  Future<int> _tingkatId(String romawi) async {
+    final angka = _romawi.entries.firstWhere((e) => e.value == romawi).key;
+    final tk = await _db
+        .from('tingkat')
+        .select('id')
+        .eq('nama', angka)
+        .single();
+    return tk['id'] as int;
+  }
+
+  Future<void> ubahKelas({
+    required int id,
+    required String tingkat,
+    required String nama,
+    int? waliKelasId,
+  }) async {
+    await _db
+        .from('kelas')
+        .update({
+          'tingkat_id': await _tingkatId(tingkat),
+          'nama': nama,
+          'wali_kelas_id': waliKelasId,
+        })
+        .eq('id', id);
+  }
+
+  /// Menghapus kelas ikut menghapus daftar siswa dan nilainya (cascade),
+  /// jadi hanya kelas kosong yang boleh dihapus.
+  Future<void> hapusKelas(int id) async {
+    final isi = await _db
+        .from('kelas_siswa')
+        .select('id')
+        .eq('kelas_id', id)
+        .count(CountOption.exact);
+    if (isi.count > 0) {
+      throw AppException(
+        AppErrorType.conflict,
+        'Kelas masih berisi ${isi.count} siswa. Pindahkan siswanya dulu.',
+      );
+    }
+    await _db.from('kelas').delete().eq('id', id);
   }
 
   Future<void> tambahSiswa({
@@ -234,6 +293,56 @@ class AdminRepository {
     }
   }
 
+  Future<void> ubahSiswa({
+    required int id,
+    required String nama,
+    required String nis,
+    String? nisn,
+    required String jk,
+    required DateTime tglLahir,
+    required int kelasId,
+    int? waliMuridId,
+  }) async {
+    final ta = await tahunAjaranAktif();
+    await _db
+        .from('siswa')
+        .update({
+          'nama': nama,
+          'nis': nis,
+          'nisn': nisn,
+          'jk': jk,
+          'tgl_lahir': tglLahir.toIso8601String().substring(0, 10),
+          'wali_murid_id': waliMuridId,
+        })
+        .eq('id', id);
+    // Pindah kelas: satu baris per siswa per tahun ajaran (unique).
+    await _db.from('kelas_siswa').upsert({
+      'siswa_id': id,
+      'tahun_ajaran_id': ta.id,
+      'kelas_id': kelasId,
+    }, onConflict: 'siswa_id,tahun_ajaran_id');
+  }
+
+  /// Nilai dan rapor siswa ikut terhapus (cascade). Layar wajib konfirmasi.
+  Future<void> hapusSiswa(int id) => _db.from('siswa').delete().eq('id', id);
+
+  Future<void> ubahGuru({
+    required int id,
+    required String nama,
+    String? nip,
+    String? noHp,
+  }) async {
+    await _db
+        .from('guru')
+        .update({'nama': nama, 'nip': nip, 'no_hp': noHp})
+        .eq('id', id);
+  }
+
+  /// Akun tidak dihapus (menghapus akun Auth butuh service role). Akun
+  /// nonaktif tidak bisa masuk karena get_my_profile() mensyaratkan is_active.
+  Future<void> setPenggunaAktif(String userId, bool aktif) =>
+      _db.from('users').update({'is_active': aktif}).eq('id', userId);
+
   /// Lewat Edge Function karena membuat akun butuh service role.
   Future<void> buatAkun({
     required String username,
@@ -243,14 +352,17 @@ class AdminRepository {
     String? nip,
     String? noHp,
   }) async {
-    await _db.functions.invoke('admin-create-user', body: {
-      'username': username,
-      'password': password,
-      'role': role.apiValue,
-      'nama': nama,
-      'nip': nip,
-      'no_hp': noHp,
-    });
+    await _db.functions.invoke(
+      'admin-create-user',
+      body: {
+        'username': username,
+        'password': password,
+        'role': role.apiValue,
+        'nama': nama,
+        'nip': nip,
+        'no_hp': noHp,
+      },
+    );
   }
 
   // Relasi to-one dikembalikan PostgREST sebagai objek, to-many sebagai list.
@@ -267,6 +379,13 @@ class AdminRepository {
     return null;
   }
 
+  static int? _kelasIdAktif(dynamic v, int taId) {
+    for (final r in (v as List).cast<Map<String, dynamic>>()) {
+      if (r['tahun_ajaran_id'] == taId) return r['kelas_id'] as int;
+    }
+    return null;
+  }
+
   static String? _waliKelasAktif(dynamic v, int taId) {
     for (final r in (v as List).cast<Map<String, dynamic>>()) {
       if (r['tahun_ajaran_id'] == taId) return r['nama'] as String;
@@ -277,7 +396,7 @@ class AdminRepository {
   static String _mapel(dynamic v) {
     final nama = {
       for (final r in (v as List).cast<Map<String, dynamic>>())
-        r['mapel']['nama'] as String
+        r['mapel']['nama'] as String,
     };
     return nama.isEmpty ? '-' : nama.join(', ');
   }

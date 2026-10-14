@@ -7,12 +7,11 @@ import '../../features/admin/presentation/admin_widgets.dart';
 import '../../models/siswa_model.dart';
 
 class AdminDataSiswaScreen extends ConsumerStatefulWidget {
-  const AdminDataSiswaScreen({
-    super.key,
-  });
+  const AdminDataSiswaScreen({super.key});
 
   @override
-  ConsumerState<AdminDataSiswaScreen> createState() => _AdminDataSiswaScreenState();
+  ConsumerState<AdminDataSiswaScreen> createState() =>
+      _AdminDataSiswaScreenState();
 }
 
 class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
@@ -26,7 +25,8 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
   List<SiswaModel> get _filteredSiswa {
     final query = _searchController.text.trim().toLowerCase();
     return _daftarSiswa.where((siswa) {
-      final matchesQuery = query.isEmpty ||
+      final matchesQuery =
+          query.isEmpty ||
           siswa.nama.toLowerCase().contains(query) ||
           siswa.nisn.toLowerCase().contains(query);
       final matchesKelas =
@@ -62,155 +62,157 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
           ),
         ),
       ),
-      body: statusAsync(lista, () => ref.invalidate(adminSiswaProvider)) ??
+      body:
+          statusAsync(lista, () => ref.invalidate(adminSiswaProvider)) ??
           SafeArea(
-        child: Column(
-          children: [
-            // Search Box & Filter Kelas
-            Container(
-              color: Colors.white,
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-              child: Column(
-                children: [
-                  // Text Field: Cari nama/NISN (sesuai wireframe)
-                  Container(
-                    decoration: BoxDecoration(
-                      color: kField,
-                      borderRadius: BorderRadius.circular(kRadiusControl),
-                      border: Border.all(color: kBorder),
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged: (_) => setState(() {}),
-                      decoration: InputDecoration(
-                        hintText: 'Cari nama/NISN',
-                        hintStyle: TextStyle(
-                          color: kMuted,
-                          fontSize: 14,
+            child: Column(
+              children: [
+                // Search Box & Filter Kelas
+                Container(
+                  color: Colors.white,
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                  child: Column(
+                    children: [
+                      // Text Field: Cari nama/NISN (sesuai wireframe)
+                      Container(
+                        decoration: BoxDecoration(
+                          color: kField,
+                          borderRadius: BorderRadius.circular(kRadiusControl),
+                          border: Border.all(color: kBorder),
                         ),
-                        prefixIcon: const Icon(Icons.search, size: 20),
-                        suffixIcon: _searchController.text.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear, size: 18),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  setState(() {});
-                                },
-                              )
-                            : null,
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        filled: false,
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 12,
-                          horizontal: 12,
+                        child: TextField(
+                          controller: _searchController,
+                          onChanged: (_) => setState(() {}),
+                          decoration: InputDecoration(
+                            hintText: 'Cari nama/NISN',
+                            hintStyle: TextStyle(color: kMuted, fontSize: 14),
+                            prefixIcon: const Icon(Icons.search, size: 20),
+                            suffixIcon: _searchController.text.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear, size: 18),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      setState(() {});
+                                    },
+                                  )
+                                : null,
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            filled: false,
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 12,
+                              horizontal: 12,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
 
-                  const SizedBox(height: 10),
+                      const SizedBox(height: 10),
 
-                  // Filter Chip Kelas
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: _kelasList.map((kelas) {
-                        final isSelected = _selectedKelas == kelas;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 6),
-                          child: InkWell(
-                            onTap: () => setState(() => _selectedKelas = kelas),
-                            borderRadius: BorderRadius.circular(999),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 180),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? brandColor
-                                    : kField,
+                      // Filter Chip Kelas
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: _kelasList.map((kelas) {
+                            final isSelected = _selectedKelas == kelas;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 6),
+                              child: InkWell(
+                                onTap: () =>
+                                    setState(() => _selectedKelas = kelas),
                                 borderRadius: BorderRadius.circular(999),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? brandColor
-                                      : kBorder,
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 180),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isSelected ? brandColor : kField,
+                                    borderRadius: BorderRadius.circular(999),
+                                    border: Border.all(
+                                      color: isSelected ? brandColor : kBorder,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    kelas == 'Semua'
+                                        ? 'Semua Kelas'
+                                        : 'Kelas $kelas',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: isSelected
+                                          ? FontWeight.bold
+                                          : FontWeight.w500,
+                                      color: isSelected ? Colors.white : kMuted,
+                                    ),
+                                  ),
                                 ),
                               ),
-                              child: Text(
-                                kelas == 'Semua' ? 'Semua Kelas' : 'Kelas $kelas',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: isSelected
-                                      ? FontWeight.bold
-                                      : FontWeight.w500,
-                                  color: isSelected
-                                      ? Colors.white
-                                      : kMuted,
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const Divider(height: 1),
-
-            // Daftar Siswa
-            Expanded(
-              child: _filteredSiswa.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.person_search_outlined,
-                              size: 48, color: kMuted),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Siswa tidak ditemukan',
-                            style: TextStyle(
-                              color: kMuted,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
+                            );
+                          }).toList(),
+                        ),
                       ),
-                    )
-                  : RefreshIndicator(
-                      color: kBrand,
-                      onRefresh: () async {
-                        ref.invalidate(adminSiswaProvider);
-                        try {
-                          await ref.read(adminSiswaProvider.future);
-                        } catch (_) {}
-                      },
-                      child: ListView.separated(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-                      itemCount: _filteredSiswa.length,
-                      separatorBuilder: (context, index) =>
-                          const SizedBox(height: 10),
-                      itemBuilder: (context, index) {
-                        final siswa = _filteredSiswa[index];
-                        return FadeSlideIn(
-                          index: index,
-                          child: PressScale(child: _buildSiswaCard(siswa, brandColor)),
-                        );
-                      },
-                    ),
-                    ),
+                    ],
+                  ),
+                ),
+
+                const Divider(height: 1),
+
+                // Daftar Siswa
+                Expanded(
+                  child: _filteredSiswa.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.person_search_outlined,
+                                size: 48,
+                                color: kMuted,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Siswa tidak ditemukan',
+                                style: TextStyle(
+                                  color: kMuted,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : RefreshIndicator(
+                          color: kBrand,
+                          onRefresh: () async {
+                            ref.invalidate(adminSiswaProvider);
+                            try {
+                              await ref.read(adminSiswaProvider.future);
+                            } catch (_) {}
+                          },
+                          child: ListView.separated(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+                            itemCount: _filteredSiswa.length,
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(height: 10),
+                            itemBuilder: (context, index) {
+                              final siswa = _filteredSiswa[index];
+                              return FadeSlideIn(
+                                index: index,
+                                child: PressScale(
+                                  child: _buildSiswaCard(siswa, brandColor),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddSiswaSheet(context),
+        onPressed: () => _showSiswaFormSheet(context),
         icon: const Icon(Icons.add),
         label: const Text('Tambah'),
       ),
@@ -271,11 +273,7 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.chevron_right,
-                  size: 20,
-                  color: kMuted,
-                ),
+                Icon(Icons.chevron_right, size: 20, color: kMuted),
               ],
             ),
           ),
@@ -285,7 +283,10 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
   }
 
   void _showSiswaDetailSheet(
-      BuildContext context, SiswaModel siswa, Color brandColor) {
+    BuildContext context,
+    SiswaModel siswa,
+    Color brandColor,
+  ) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -334,38 +335,44 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              subtitle: Text('Status: ${siswa.status}'),
+              subtitle: Text('NIS ${siswa.nis}'),
             ),
             const Divider(),
             _buildDetailRow('NISN', siswa.nisn),
             _buildDetailRow('Kelas', siswa.kelas),
-            _buildDetailRow('Jenis Kelamin',
-                siswa.jenisKelamin == 'L' ? 'Laki-laki' : 'Perempuan'),
             _buildDetailRow(
-                'Nama Orang Tua / Wali',
-                siswa.namaWali.isNotEmpty
-                    ? siswa.namaWali
-                    : 'Belum terhubung'),
+              'Jenis Kelamin',
+              siswa.jenisKelamin == 'L' ? 'Laki-laki' : 'Perempuan',
+            ),
+            _buildDetailRow(
+              'Nama Orang Tua / Wali',
+              siswa.namaWali.isNotEmpty ? siswa.namaWali : 'Belum terhubung',
+            ),
             const SizedBox(height: 16),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: brandColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(kRadiusControl),
-                ),
-              ),
-              onPressed: () {
+            AksiUbahHapus(
+              onUbah: () {
                 Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Membuka lembar nilai ${siswa.nama}...'),
-                  ),
-                );
+                _showSiswaFormSheet(context, awal: siswa);
               },
-              icon: const Icon(Icons.description_outlined, size: 18),
-              label: const Text('Lihat Rekap Nilai Siswa'),
+              onHapus: () async {
+                final yakin = await konfirmasiHapus(
+                  ctx,
+                  judul: 'Hapus ${siswa.nama}?',
+                  isi:
+                      'Data siswa beserta nilai dan rapornya akan terhapus permanen.',
+                );
+                if (!yakin || !context.mounted) return;
+                final ok = await simpan(
+                  context,
+                  () => ref
+                      .read(adminRepositoryProvider)
+                      .hapusSiswa(int.parse(siswa.id)),
+                  'Siswa ${siswa.nama} dihapus.',
+                );
+                if (!ok) return;
+                _segarkan();
+                if (ctx.mounted) Navigator.pop(ctx);
+              },
             ),
           ],
         ),
@@ -379,10 +386,7 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(fontSize: 13, color: kMuted),
-          ),
+          Text(label, style: TextStyle(fontSize: 13, color: kMuted)),
           Text(
             value,
             style: const TextStyle(
@@ -396,29 +400,43 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
     );
   }
 
-  Future<void> _showAddSiswaSheet(BuildContext context) async {
+  void _segarkan() {
+    ref.invalidate(adminSiswaProvider);
+    ref.invalidate(adminKelasProvider);
+    ref.invalidate(adminStatistikProvider);
+  }
+
+  /// Form tambah (awal == null) atau ubah siswa.
+  Future<void> _showSiswaFormSheet(
+    BuildContext context, {
+    SiswaModel? awal,
+  }) async {
     final kelas = await ref.read(opsiKelasProvider.future);
     final wali = await ref.read(opsiWaliMuridProvider.future);
     if (!context.mounted) return;
     if (kelas.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Buat kelas dulu sebelum menambah siswa.')),
+        const SnackBar(
+          content: Text('Buat kelas dulu sebelum menambah siswa.'),
+        ),
       );
       return;
     }
 
-    final nameCtrl = TextEditingController();
-    final nisCtrl = TextEditingController();
-    final nisnCtrl = TextEditingController();
-    int selectedKelas = kelas.first.id;
-    int? selectedWali;
-    String selectedJK = 'L';
-    DateTime? tglLahir;
+    final nameCtrl = TextEditingController(text: awal?.nama);
+    final nisCtrl = TextEditingController(text: awal?.nis);
+    final nisnCtrl = TextEditingController(text: awal?.nisnAsli);
+    int selectedKelas = kelas.any((k) => k.id == awal?.kelasId)
+        ? awal!.kelasId!
+        : kelas.first.id;
+    int? selectedWali = wali.any((w) => w.id == awal?.waliMuridId)
+        ? awal!.waliMuridId
+        : null;
+    String selectedJK = awal?.jenisKelamin ?? 'L';
+    DateTime? tglLahir = awal?.tglLahir;
 
-    InputDecoration dekor(String label, {String? hint}) => InputDecoration(
-          labelText: label,
-          hintText: hint,
-        );
+    InputDecoration dekor(String label, {String? hint}) =>
+        InputDecoration(labelText: label, hintText: hint);
 
     showModalBottomSheet(
       context: context,
@@ -439,8 +457,8 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Tambah Siswa Baru',
+                  Text(
+                    awal == null ? 'Tambah Siswa Baru' : 'Ubah Data Siswa',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   IconButton(
@@ -452,8 +470,10 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
               const SizedBox(height: 12),
               TextField(
                 controller: nameCtrl,
-                decoration:
-                    dekor('Nama Lengkap Siswa', hint: 'Contoh: Ahmad Fauzan'),
+                decoration: dekor(
+                  'Nama Lengkap Siswa',
+                  hint: 'Contoh: Ahmad Fauzan',
+                ),
               ),
               const SizedBox(height: 10),
               Row(
@@ -528,8 +548,8 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
                     tglLahir == null
                         ? 'Pilih tanggal'
                         : '${tglLahir!.day.toString().padLeft(2, '0')}-'
-                            '${tglLahir!.month.toString().padLeft(2, '0')}-'
-                            '${tglLahir!.year}',
+                              '${tglLahir!.month.toString().padLeft(2, '0')}-'
+                              '${tglLahir!.year}',
                   ),
                 ),
               ),
@@ -539,7 +559,9 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
                 decoration: dekor('Orang Tua / Wali (opsional)'),
                 items: [
                   const DropdownMenuItem<int?>(
-                      value: null, child: Text('Belum terhubung')),
+                    value: null,
+                    child: Text('Belum terhubung'),
+                  ),
                   for (final w in wali)
                     DropdownMenuItem<int?>(value: w.id, child: Text(w.label)),
                 ],
@@ -562,25 +584,40 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
                       tglLahir == null) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content:
-                            Text('Nama, NIS, dan tanggal lahir wajib diisi.'),
+                        content: Text(
+                          'Nama, NIS, dan tanggal lahir wajib diisi.',
+                        ),
                       ),
                     );
                     return;
                   }
                   final nisn = nisnCtrl.text.trim();
+                  final repo = ref.read(adminRepositoryProvider);
                   final ok = await simpan(
                     context,
-                    () => ref.read(adminRepositoryProvider).tambahSiswa(
-                          nama: nama,
-                          nis: nisCtrl.text.trim(),
-                          nisn: nisn.isEmpty ? null : nisn,
-                          jk: selectedJK,
-                          tglLahir: tglLahir!,
-                          kelasId: selectedKelas,
-                          waliMuridId: selectedWali,
-                        ),
-                    'Siswa $nama berhasil ditambahkan.',
+                    () => awal == null
+                        ? repo.tambahSiswa(
+                            nama: nama,
+                            nis: nisCtrl.text.trim(),
+                            nisn: nisn.isEmpty ? null : nisn,
+                            jk: selectedJK,
+                            tglLahir: tglLahir!,
+                            kelasId: selectedKelas,
+                            waliMuridId: selectedWali,
+                          )
+                        : repo.ubahSiswa(
+                            id: int.parse(awal.id),
+                            nama: nama,
+                            nis: nisCtrl.text.trim(),
+                            nisn: nisn.isEmpty ? null : nisn,
+                            jk: selectedJK,
+                            tglLahir: tglLahir!,
+                            kelasId: selectedKelas,
+                            waliMuridId: selectedWali,
+                          ),
+                    awal == null
+                        ? 'Siswa $nama berhasil ditambahkan.'
+                        : 'Data $nama diperbarui.',
                   );
                   if (!ok) return;
                   ref.invalidate(adminSiswaProvider);
@@ -588,8 +625,8 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
                   ref.invalidate(adminStatistikProvider);
                   if (ctx.mounted) Navigator.pop(ctx);
                 },
-                child: const Text(
-                  'Simpan Data Siswa',
+                child: Text(
+                  awal == null ? 'Simpan Data Siswa' : 'Simpan Perubahan',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),

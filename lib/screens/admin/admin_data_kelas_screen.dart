@@ -7,18 +7,22 @@ import '../../features/admin/presentation/admin_widgets.dart';
 import '../../models/kelas_model.dart';
 
 class AdminDataKelasScreen extends ConsumerStatefulWidget {
-  const AdminDataKelasScreen({
-    super.key,
-  });
+  const AdminDataKelasScreen({super.key});
 
   @override
-  ConsumerState<AdminDataKelasScreen> createState() => _AdminDataKelasScreenState();
+  ConsumerState<AdminDataKelasScreen> createState() =>
+      _AdminDataKelasScreenState();
 }
 
 class _AdminDataKelasScreenState extends ConsumerState<AdminDataKelasScreen> {
   String _selectedTingkat = 'Semua';
 
-  final List<String> _tingkatList = ['Semua', 'Kelas VII', 'Kelas VIII', 'Kelas IX'];
+  final List<String> _tingkatList = [
+    'Semua',
+    'Kelas VII',
+    'Kelas VIII',
+    'Kelas IX',
+  ];
 
   List<KelasModel> _daftarKelas = const [];
 
@@ -45,103 +49,106 @@ class _AdminDataKelasScreenState extends ConsumerState<AdminDataKelasScreen> {
           ),
         ),
       ),
-      body: statusAsync(lista, () => ref.invalidate(adminKelasProvider)) ??
+      body:
+          statusAsync(lista, () => ref.invalidate(adminKelasProvider)) ??
           SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Filter Tingkat Kelas Chips
-            Container(
-              color: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: _tingkatList.map((tingkat) {
-                    final isSelected = _selectedTingkat == tingkat;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: InkWell(
-                        onTap: () => setState(() => _selectedTingkat = tingkat),
-                        borderRadius: BorderRadius.circular(999),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 180),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 7),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? brandColor
-                                : kField,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Filter Tingkat Kelas Chips
+                Container(
+                  color: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: _tingkatList.map((tingkat) {
+                        final isSelected = _selectedTingkat == tingkat;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: InkWell(
+                            onTap: () =>
+                                setState(() => _selectedTingkat = tingkat),
                             borderRadius: BorderRadius.circular(999),
-                            border: Border.all(
-                              color: isSelected
-                                  ? brandColor
-                                  : kBorder,
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 7,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isSelected ? brandColor : kField,
+                                borderRadius: BorderRadius.circular(999),
+                                border: Border.all(
+                                  color: isSelected ? brandColor : kBorder,
+                                ),
+                              ),
+                              child: Text(
+                                tingkat,
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.w500,
+                                  color: isSelected ? Colors.white : kMuted,
+                                ),
+                              ),
                             ),
                           ),
-                          child: Text(
-                            tingkat,
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: isSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.w500,
-                              color: isSelected
-                                  ? Colors.white
-                                  : kMuted,
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-            ),
-
-            const Divider(height: 1),
-
-            // Daftar Kelas (Sesuai Wireframe)
-            Expanded(
-              child: _filteredKelas.isEmpty
-                  ? Center(
-                      child: Text(
-                        'Tidak ada kelas ditemukan',
-                        style: TextStyle(
-                          color: kMuted,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    )
-                  : RefreshIndicator(
-                      color: kBrand,
-                      onRefresh: () async {
-                        ref.invalidate(adminKelasProvider);
-                        try {
-                          await ref.read(adminKelasProvider.future);
-                        } catch (_) {}
-                      },
-                      child: ListView.separated(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-                      itemCount: _filteredKelas.length,
-                      separatorBuilder: (context, index) =>
-                          const SizedBox(height: 10),
-                      itemBuilder: (context, index) {
-                        final kelas = _filteredKelas[index];
-                        return FadeSlideIn(
-                          index: index,
-                          child: PressScale(child: _buildKelasCard(kelas, brandColor)),
                         );
-                      },
+                      }).toList(),
                     ),
-                    ),
+                  ),
+                ),
+
+                const Divider(height: 1),
+
+                // Daftar Kelas (Sesuai Wireframe)
+                Expanded(
+                  child: _filteredKelas.isEmpty
+                      ? Center(
+                          child: Text(
+                            'Tidak ada kelas ditemukan',
+                            style: TextStyle(
+                              color: kMuted,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        )
+                      : RefreshIndicator(
+                          color: kBrand,
+                          onRefresh: () async {
+                            ref.invalidate(adminKelasProvider);
+                            try {
+                              await ref.read(adminKelasProvider.future);
+                            } catch (_) {}
+                          },
+                          child: ListView.separated(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+                            itemCount: _filteredKelas.length,
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(height: 10),
+                            itemBuilder: (context, index) {
+                              final kelas = _filteredKelas[index];
+                              return FadeSlideIn(
+                                index: index,
+                                child: PressScale(
+                                  child: _buildKelasCard(kelas, brandColor),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddKelasSheet(context),
+        onPressed: () => _showKelasFormSheet(context),
         icon: const Icon(Icons.add),
         label: const Text('Tambah'),
       ),
@@ -189,11 +196,7 @@ class _AdminDataKelasScreenState extends ConsumerState<AdminDataKelasScreen> {
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.chevron_right,
-                  size: 20,
-                  color: kMuted,
-                ),
+                Icon(Icons.chevron_right, size: 20, color: kMuted),
               ],
             ),
           ),
@@ -203,7 +206,10 @@ class _AdminDataKelasScreenState extends ConsumerState<AdminDataKelasScreen> {
   }
 
   void _showKelasDetailSheet(
-      BuildContext context, KelasModel kelas, Color brandColor) {
+    BuildContext context,
+    KelasModel kelas,
+    Color brandColor,
+  ) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -233,30 +239,36 @@ class _AdminDataKelasScreenState extends ConsumerState<AdminDataKelasScreen> {
             const SizedBox(height: 8),
             _buildDetailRow('Tingkat', 'Kelas ${kelas.tingkat} (MTs)'),
             _buildDetailRow('Wali Kelas', kelas.namaWali),
+            _buildDetailRow('Jumlah Siswa', '${kelas.jumlahSiswa} siswa'),
             _buildDetailRow(
-                'Jumlah Siswa', '${kelas.jumlahSiswa} / ${kelas.kapasitas} Siswa'),
-            _buildDetailRow('Tahun Ajaran', '2025/2026 (Ganjil)'),
+              'Tahun Ajaran',
+              ref.read(tahunAjaranAktifProvider).valueOrNull?.label ?? '-',
+            ),
             const SizedBox(height: 16),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: brandColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(kRadiusControl),
-                ),
-              ),
-              onPressed: () {
+            AksiUbahHapus(
+              onUbah: () {
                 Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                        'Membuka daftar seluruh siswa Kelas ${kelas.namaKelas}...'),
-                  ),
-                );
+                _showKelasFormSheet(context, awal: kelas);
               },
-              icon: const Icon(Icons.groups_outlined, size: 18),
-              label: const Text('Lihat Daftar Siswa Kelas Ini'),
+              onHapus: () async {
+                final yakin = await konfirmasiHapus(
+                  ctx,
+                  judul: 'Hapus kelas ${kelas.namaKelas}?',
+                  isi:
+                      'Hanya kelas yang sudah tidak berisi siswa yang bisa dihapus.',
+                );
+                if (!yakin || !context.mounted) return;
+                final ok = await simpan(
+                  context,
+                  () => ref
+                      .read(adminRepositoryProvider)
+                      .hapusKelas(int.parse(kelas.id)),
+                  'Kelas ${kelas.namaKelas} dihapus.',
+                );
+                if (!ok) return;
+                _segarkan();
+                if (ctx.mounted) Navigator.pop(ctx);
+              },
             ),
           ],
         ),
@@ -270,10 +282,7 @@ class _AdminDataKelasScreenState extends ConsumerState<AdminDataKelasScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(fontSize: 13, color: kMuted),
-          ),
+          Text(label, style: TextStyle(fontSize: 13, color: kMuted)),
           Text(
             value,
             style: const TextStyle(
@@ -287,12 +296,27 @@ class _AdminDataKelasScreenState extends ConsumerState<AdminDataKelasScreen> {
     );
   }
 
-  Future<void> _showAddKelasSheet(BuildContext context) async {
-    final namaCtrl = TextEditingController();
+  void _segarkan() {
+    ref.invalidate(adminKelasProvider);
+    ref.invalidate(adminSiswaProvider);
+    ref.invalidate(opsiKelasProvider);
+    ref.invalidate(adminGuruProvider);
+    ref.invalidate(adminStatistikProvider);
+  }
+
+  /// Form tambah (awal == null) atau ubah kelas.
+  Future<void> _showKelasFormSheet(
+    BuildContext context, {
+    KelasModel? awal,
+  }) async {
+    final namaCtrl = TextEditingController(text: awal?.namaKelas);
     int? selectedWaliId;
     final guru = await ref.read(opsiGuruProvider.future);
     if (!context.mounted) return;
-    String selectedTingkat = 'VII';
+    String selectedTingkat = awal?.tingkat ?? 'VII';
+    if (guru.any((g) => g.id == awal?.waliKelasId)) {
+      selectedWaliId = awal!.waliKelasId;
+    }
 
     showModalBottomSheet(
       context: context,
@@ -313,12 +337,9 @@ class _AdminDataKelasScreenState extends ConsumerState<AdminDataKelasScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Tambah Kelas Baru',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Text(
+                    awal == null ? 'Tambah Kelas Baru' : 'Ubah Kelas',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close),
@@ -329,9 +350,7 @@ class _AdminDataKelasScreenState extends ConsumerState<AdminDataKelasScreen> {
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: selectedTingkat,
-                decoration: InputDecoration(
-                  labelText: 'Tingkat Kelas',
-                ),
+                decoration: InputDecoration(labelText: 'Tingkat Kelas'),
                 items: const [
                   DropdownMenuItem(value: 'VII', child: Text('Tingkat VII')),
                   DropdownMenuItem(value: 'VIII', child: Text('Tingkat VIII')),
@@ -354,12 +373,12 @@ class _AdminDataKelasScreenState extends ConsumerState<AdminDataKelasScreen> {
               const SizedBox(height: 10),
               DropdownButtonFormField<int?>(
                 initialValue: selectedWaliId,
-                decoration: InputDecoration(
-                  labelText: 'Wali Kelas (opsional)',
-                ),
+                decoration: InputDecoration(labelText: 'Wali Kelas (opsional)'),
                 items: [
                   const DropdownMenuItem<int?>(
-                      value: null, child: Text('Belum ditentukan')),
+                    value: null,
+                    child: Text('Belum ditentukan'),
+                  ),
                   for (final g in guru)
                     DropdownMenuItem<int?>(value: g.id, child: Text(g.label)),
                 ],
@@ -383,23 +402,31 @@ class _AdminDataKelasScreenState extends ConsumerState<AdminDataKelasScreen> {
                     );
                     return;
                   }
+                  final repo = ref.read(adminRepositoryProvider);
                   final ok = await simpan(
                     context,
-                    () => ref.read(adminRepositoryProvider).tambahKelas(
-                          tingkat: selectedTingkat,
-                          nama: nama,
-                          waliKelasId: selectedWaliId,
-                        ),
-                    'Kelas $nama berhasil ditambahkan.',
+                    () => awal == null
+                        ? repo.tambahKelas(
+                            tingkat: selectedTingkat,
+                            nama: nama,
+                            waliKelasId: selectedWaliId,
+                          )
+                        : repo.ubahKelas(
+                            id: int.parse(awal.id),
+                            tingkat: selectedTingkat,
+                            nama: nama,
+                            waliKelasId: selectedWaliId,
+                          ),
+                    awal == null
+                        ? 'Kelas $nama berhasil ditambahkan.'
+                        : 'Kelas $nama diperbarui.',
                   );
                   if (!ok) return;
-                  ref.invalidate(adminKelasProvider);
-                  ref.invalidate(opsiKelasProvider);
-                  ref.invalidate(adminStatistikProvider);
+                  _segarkan();
                   if (ctx.mounted) Navigator.pop(ctx);
                 },
-                child: const Text(
-                  'Simpan Kelas',
+                child: Text(
+                  awal == null ? 'Simpan Kelas' : 'Simpan Perubahan',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),

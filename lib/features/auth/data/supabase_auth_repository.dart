@@ -64,6 +64,13 @@ class SupabaseAuthRepository implements AuthRepository {
 
   Future<AppUser> _loadProfile() async {
     final data = await _client.rpc('get_my_profile');
+    // null: akun ada di Auth tetapi dinonaktifkan admin (is_active = false).
+    if (data == null) {
+      throw const AppException(
+        AppErrorType.unauthorized,
+        'Akun ini dinonaktifkan. Hubungi Admin TU.',
+      );
+    }
     if (data is! Map<String, dynamic>) {
       throw const FormatException('Profil kosong');
     }

@@ -8,12 +8,11 @@ import '../../models/guru_model.dart';
 import '../../models/user_model.dart';
 
 class AdminDataGuruScreen extends ConsumerStatefulWidget {
-  const AdminDataGuruScreen({
-    super.key,
-  });
+  const AdminDataGuruScreen({super.key});
 
   @override
-  ConsumerState<AdminDataGuruScreen> createState() => _AdminDataGuruScreenState();
+  ConsumerState<AdminDataGuruScreen> createState() =>
+      _AdminDataGuruScreenState();
 }
 
 class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
@@ -54,101 +53,104 @@ class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
           ),
         ),
       ),
-      body: statusAsync(lista, () => ref.invalidate(adminGuruProvider)) ??
+      body:
+          statusAsync(lista, () => ref.invalidate(adminGuruProvider)) ??
           SafeArea(
-        child: Column(
-          children: [
-            // Search Input Container (Cari...)
-            Container(
-              color: Colors.white,
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: kField,
-                  borderRadius: BorderRadius.circular(kRadiusControl),
-                  border: Border.all(color: kBorder),
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: (_) => setState(() {}),
-                  decoration: InputDecoration(
-                    hintText: 'Cari...',
-                    hintStyle: TextStyle(
-                      color: kMuted,
-                      fontSize: 14,
+            child: Column(
+              children: [
+                // Search Input Container (Cari...)
+                Container(
+                  color: Colors.white,
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: kField,
+                      borderRadius: BorderRadius.circular(kRadiusControl),
+                      border: Border.all(color: kBorder),
                     ),
-                    prefixIcon: const Icon(Icons.search, size: 20),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear, size: 18),
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() {});
-                            },
-                          )
-                        : null,
-                    border: InputBorder.none,
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: (_) => setState(() {}),
+                      decoration: InputDecoration(
+                        hintText: 'Cari...',
+                        hintStyle: TextStyle(color: kMuted, fontSize: 14),
+                        prefixIcon: const Icon(Icons.search, size: 20),
+                        suffixIcon: _searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear, size: 18),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  setState(() {});
+                                },
+                              )
+                            : null,
+                        border: InputBorder.none,
                         enabledBorder: InputBorder.none,
                         focusedBorder: InputBorder.none,
                         filled: false,
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 12,
-                      horizontal: 12,
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 12,
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
 
-            const Divider(height: 1),
+                const Divider(height: 1),
 
-            // Daftar Guru
-            Expanded(
-              child: _filteredGuru.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.person_off_outlined,
-                              size: 48, color: kMuted),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Guru tidak ditemukan',
-                            style: TextStyle(
-                              color: kMuted,
-                              fontWeight: FontWeight.w500,
-                            ),
+                // Daftar Guru
+                Expanded(
+                  child: _filteredGuru.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.person_off_outlined,
+                                size: 48,
+                                color: kMuted,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Guru tidak ditemukan',
+                                style: TextStyle(
+                                  color: kMuted,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    )
-                  : RefreshIndicator(
-                      color: kBrand,
-                      onRefresh: () async {
-                        ref.invalidate(adminGuruProvider);
-                        try {
-                          await ref.read(adminGuruProvider.future);
-                        } catch (_) {}
-                      },
-                      child: ListView.separated(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-                      itemCount: _filteredGuru.length,
-                      separatorBuilder: (context, index) =>
-                          const SizedBox(height: 10),
-                      itemBuilder: (context, index) {
-                        final guru = _filteredGuru[index];
-                        return FadeSlideIn(
-                          index: index,
-                          child: PressScale(child: _buildGuruCard(guru, brandColor)),
-                        );
-                      },
-                    ),
-                    ),
+                        )
+                      : RefreshIndicator(
+                          color: kBrand,
+                          onRefresh: () async {
+                            ref.invalidate(adminGuruProvider);
+                            try {
+                              await ref.read(adminGuruProvider.future);
+                            } catch (_) {}
+                          },
+                          child: ListView.separated(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+                            itemCount: _filteredGuru.length,
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(height: 10),
+                            itemBuilder: (context, index) {
+                              final guru = _filteredGuru[index];
+                              return FadeSlideIn(
+                                index: index,
+                                child: PressScale(
+                                  child: _buildGuruCard(guru, brandColor),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddGuruSheet(context),
         icon: const Icon(Icons.add),
@@ -211,11 +213,7 @@ class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.chevron_right,
-                  size: 20,
-                  color: kMuted,
-                ),
+                Icon(Icons.chevron_right, size: 20, color: kMuted),
               ],
             ),
           ),
@@ -225,7 +223,10 @@ class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
   }
 
   void _showGuruDetailSheet(
-      BuildContext context, GuruModel guru, Color brandColor) {
+    BuildContext context,
+    GuruModel guru,
+    Color brandColor,
+  ) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -279,30 +280,20 @@ class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
             const Divider(),
             _buildDetailRow('NIP', guru.nip),
             _buildDetailRow('Mata Pelajaran', guru.mapel),
-            _buildDetailRow('Wali Kelas',
-                guru.waliKelas != null ? 'Kelas ${guru.waliKelas}' : 'Bukan Wali Kelas'),
+            _buildDetailRow(
+              'Wali Kelas',
+              guru.waliKelas != null
+                  ? 'Kelas ${guru.waliKelas}'
+                  : 'Bukan Wali Kelas',
+            ),
             _buildDetailRow('Email', guru.email),
             _buildDetailRow('Nomor Telepon', guru.telepon),
             const SizedBox(height: 16),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: brandColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(kRadiusControl),
-                ),
-              ),
-              onPressed: () {
+            AksiUbahHapus(
+              onUbah: () {
                 Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Membuka jadwal mengajar ${guru.nama}...'),
-                  ),
-                );
+                _showEditGuruSheet(context, guru);
               },
-              icon: const Icon(Icons.calendar_month_outlined, size: 18),
-              label: const Text('Lihat Jadwal Mengajar'),
             ),
           ],
         ),
@@ -316,10 +307,7 @@ class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(fontSize: 13, color: kMuted),
-          ),
+          Text(label, style: TextStyle(fontSize: 13, color: kMuted)),
           Text(
             value,
             style: const TextStyle(
@@ -329,6 +317,98 @@ class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showEditGuruSheet(BuildContext context, GuruModel guru) {
+    final nameCtrl = TextEditingController(text: guru.nama);
+    final nipCtrl = TextEditingController(
+      text: guru.nip == '-' ? '' : guru.nip,
+    );
+    final hpCtrl = TextEditingController(text: guru.telepon);
+    String? kosongJadiNull(String v) => v.trim().isEmpty ? null : v.trim();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          top: 20,
+          left: 20,
+          right: 20,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Ubah Data Guru',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: nameCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Nama Lengkap & Gelar',
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: nipCtrl,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'NIP / NUPTK'),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: hpCtrl,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(labelText: 'No. HP (opsional)'),
+            ),
+            const SizedBox(height: 18),
+            FilledButton(
+              onPressed: () async {
+                final nama = nameCtrl.text.trim();
+                if (nama.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Nama guru wajib diisi.')),
+                  );
+                  return;
+                }
+                final ok = await simpan(
+                  context,
+                  () => ref
+                      .read(adminRepositoryProvider)
+                      .ubahGuru(
+                        id: int.parse(guru.id),
+                        nama: nama,
+                        nip: kosongJadiNull(nipCtrl.text),
+                        noHp: kosongJadiNull(hpCtrl.text),
+                      ),
+                  'Data $nama diperbarui.',
+                );
+                if (!ok) return;
+                ref.invalidate(adminGuruProvider);
+                ref.invalidate(adminPenggunaProvider);
+                ref.invalidate(opsiGuruProvider);
+                ref.invalidate(adminKelasProvider);
+                if (ctx.mounted) Navigator.pop(ctx);
+              },
+              child: const Text('Simpan Perubahan'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -360,10 +440,7 @@ class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
               children: [
                 const Text(
                   'Tambah Guru Baru',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 IconButton(
                   icon: const Icon(Icons.close),
@@ -431,7 +508,9 @@ class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
                     passCtrl.text.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Nama, username, dan password wajib diisi.'),
+                      content: Text(
+                        'Nama, username, dan password wajib diisi.',
+                      ),
                     ),
                   );
                   return;
@@ -439,7 +518,9 @@ class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
                 final nama = nameCtrl.text.trim();
                 final ok = await simpan(
                   context,
-                  () => ref.read(adminRepositoryProvider).buatAkun(
+                  () => ref
+                      .read(adminRepositoryProvider)
+                      .buatAkun(
                         username: userCtrl.text.trim(),
                         password: passCtrl.text,
                         role: UserRole.guru,
