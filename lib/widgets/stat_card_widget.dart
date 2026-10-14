@@ -3,6 +3,11 @@ import 'package:flutter/material.dart';
 import '../app/theme.dart';
 import 'motion.dart';
 
+/// Tinggi kartu yang cukup untuk isinya (ikon, angka, judul) pada skala font
+/// pengguna, supaya tidak meluap di layar sempit atau font besar.
+double statCardHeight(BuildContext context) =>
+    80 + MediaQuery.textScalerOf(context).scale(51);
+
 /// Kartu angka ringkas. Satu aksen (hijau merek) untuk semua kartu agar
 /// halaman terbaca sebagai satu sistem, bukan empat warna berbeda.
 class StatCardWidget extends StatelessWidget {

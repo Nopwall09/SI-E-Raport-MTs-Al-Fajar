@@ -24,7 +24,8 @@ class GuruBerandaPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Beranda')),
-      body: statusAsync(data, () => ref.invalidate(progresPenugasanProvider)) ??
+      body:
+          statusAsync(data, () => ref.invalidate(progresPenugasanProvider)) ??
           RefreshIndicator(
             color: kBrand,
             onRefresh: () async {
@@ -33,14 +34,26 @@ class GuruBerandaPage extends ConsumerWidget {
                 await ref.read(progresPenugasanProvider.future);
               } catch (_) {}
             },
-            child: _isi(context, theme, user?.name ?? '',
-                user?.waliKelas?.namaKelas, periode, data.value!),
+            child: _isi(
+              context,
+              theme,
+              user?.name ?? '',
+              user?.waliKelas?.namaKelas,
+              periode,
+              data.value!,
+            ),
           ),
     );
   }
 
-  Widget _isi(BuildContext context, ThemeData theme, String nama,
-      String? waliKelas, String? periode, List<PenugasanProgres> daftar) {
+  Widget _isi(
+    BuildContext context,
+    ThemeData theme,
+    String nama,
+    String? waliKelas,
+    String? periode,
+    List<PenugasanProgres> daftar,
+  ) {
     final terisi = daftar.fold<int>(0, (a, p) => a + p.terisi);
     final total = daftar.fold<int>(0, (a, p) => a + p.total);
     final kelas = {for (final p in daftar) p.penugasan.kelasId}.length;
@@ -54,15 +67,12 @@ class GuruBerandaPage extends ConsumerWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          [
-            if (waliKelas != null) 'Wali kelas $waliKelas',
-            ?periode,
-          ].join(', '),
+          [if (waliKelas != null) 'Wali kelas $waliKelas', ?periode].join(', '),
           style: theme.textTheme.bodySmall,
         ),
         const SizedBox(height: 16),
         SizedBox(
-          height: 128,
+          height: statCardHeight(context),
           child: Row(
             children: [
               Expanded(
@@ -121,9 +131,11 @@ class _KartuProgres extends StatelessWidget {
       borderRadius: BorderRadius.circular(kRadiusCard),
       child: InkWell(
         borderRadius: BorderRadius.circular(kRadiusCard),
-        onTap: () => Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => InputNilaiPage(penugasan: p.penugasan),
-        )),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => InputNilaiPage(penugasan: p.penugasan),
+          ),
+        ),
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -137,8 +149,10 @@ class _KartuProgres extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Text('${p.penugasan.mapel}, ${p.penugasan.kelas}',
-                        style: theme.textTheme.titleSmall),
+                    child: Text(
+                      '${p.penugasan.mapel}, ${p.penugasan.kelas}',
+                      style: theme.textTheme.titleSmall,
+                    ),
                   ),
                   Text(
                     '${p.terisi}/${p.total}',
@@ -153,7 +167,9 @@ class _KartuProgres extends StatelessWidget {
               const SizedBox(height: 10),
               TweenAnimationBuilder<double>(
                 tween: Tween(
-                    begin: 0, end: p.total == 0 ? 0 : p.terisi / p.total),
+                  begin: 0,
+                  end: p.total == 0 ? 0 : p.terisi / p.total,
+                ),
                 duration: const Duration(milliseconds: 700),
                 curve: Curves.easeOutCubic,
                 builder: (context, v, _) => ClipRRect(
