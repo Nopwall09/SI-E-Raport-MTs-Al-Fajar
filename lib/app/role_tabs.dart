@@ -5,6 +5,7 @@ import '../features/auth/domain/user.dart';
 import '../features/auth/presentation/profile_page.dart';
 import '../features/dashboard/presentation/dashboard_page.dart';
 import '../features/nilai/presentation/nilai_page.dart';
+import '../features/wali_kelas/presentation/wali_kelas_page.dart';
 import '../screens/admin/admin_dashboard_screen.dart';
 import '../screens/admin/admin_data_guru_screen.dart';
 import '../screens/admin/admin_data_kelas_screen.dart';
@@ -102,13 +103,13 @@ List<AppTab> tabsFor(UserRole role) {
           selectedIcon: Icons.edit_note,
           builder: () => const NilaiPage(),
         ),
-        _segera(
+        AppTab(
           slug: 'wali-kelas',
           label: 'Wali kelas',
           icon: Icons.groups_outlined,
           selectedIcon: Icons.groups,
-          sprint: 2,
           onlyWaliKelas: true,
+          builder: () => const WaliKelasPage(),
         ),
         _profil(),
       ];
