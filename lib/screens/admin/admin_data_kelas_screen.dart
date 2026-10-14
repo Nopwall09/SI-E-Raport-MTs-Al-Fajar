@@ -1,81 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../features/admin/presentation/admin_providers.dart';
+import '../../features/admin/presentation/admin_widgets.dart';
 import '../../models/kelas_model.dart';
 
-class AdminDataKelasScreen extends StatefulWidget {
-  final VoidCallback? onOpenDrawer;
-
+class AdminDataKelasScreen extends ConsumerStatefulWidget {
   const AdminDataKelasScreen({
     super.key,
-    this.onOpenDrawer,
   });
 
   @override
-  State<AdminDataKelasScreen> createState() => _AdminDataKelasScreenState();
+  ConsumerState<AdminDataKelasScreen> createState() => _AdminDataKelasScreenState();
 }
 
-class _AdminDataKelasScreenState extends State<AdminDataKelasScreen> {
+class _AdminDataKelasScreenState extends ConsumerState<AdminDataKelasScreen> {
   String _selectedTingkat = 'Semua';
 
   final List<String> _tingkatList = ['Semua', 'Kelas VII', 'Kelas VIII', 'Kelas IX'];
 
-  final List<KelasModel> _daftarKelas = [
-    const KelasModel(
-      id: '1',
-      namaKelas: 'VII-A',
-      tingkat: 'VII',
-      namaWali: 'Ust. Zulkifli, S.Pd.I',
-      jumlahSiswa: 32,
-      kapasitas: 34,
-    ),
-    const KelasModel(
-      id: '2',
-      namaKelas: 'VII-B',
-      tingkat: 'VII',
-      namaWali: 'Ust. Ahmad Fauzi, S.Pd.I',
-      jumlahSiswa: 30,
-      kapasitas: 34,
-    ),
-    const KelasModel(
-      id: '3',
-      namaKelas: 'VII-C',
-      tingkat: 'VII',
-      namaWali: 'Bpk. Hendra Wijaya, M.Pd',
-      jumlahSiswa: 31,
-      kapasitas: 34,
-    ),
-    const KelasModel(
-      id: '4',
-      namaKelas: 'VIII-A',
-      tingkat: 'VIII',
-      namaWali: 'Ibu Siti Rahma, S.Si',
-      jumlahSiswa: 33,
-      kapasitas: 34,
-    ),
-    const KelasModel(
-      id: '5',
-      namaKelas: 'VIII-B',
-      tingkat: 'VIII',
-      namaWali: 'Ibu Nur Azizah, S.Pd',
-      jumlahSiswa: 32,
-      kapasitas: 34,
-    ),
-    const KelasModel(
-      id: '6',
-      namaKelas: 'IX-A',
-      tingkat: 'IX',
-      namaWali: 'Ust. M. Rasyid, Lc',
-      jumlahSiswa: 34,
-      kapasitas: 34,
-    ),
-    const KelasModel(
-      id: '7',
-      namaKelas: 'IX-B',
-      tingkat: 'IX',
-      namaWali: 'Drs. H. Mulyadi',
-      jumlahSiswa: 29,
-      kapasitas: 34,
-    ),
-  ];
+  List<KelasModel> _daftarKelas = const [];
 
   List<KelasModel> get _filteredKelas {
     if (_selectedTingkat == 'Semua') return _daftarKelas;
@@ -85,6 +28,8 @@ class _AdminDataKelasScreenState extends State<AdminDataKelasScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lista = ref.watch(adminKelasProvider);
+    _daftarKelas = lista.valueOrNull ?? const [];
     const brandColor = Color(0xFF0D5C3A);
 
     return Scaffold(
@@ -93,18 +38,6 @@ class _AdminDataKelasScreenState extends State<AdminDataKelasScreen> {
         elevation: 0,
         backgroundColor: Colors.white,
         scrolledUnderElevation: 1,
-        leading: Builder(
-          builder: (ctx) => IconButton(
-            icon: const Icon(Icons.menu, color: Color(0xFF1E293B)),
-            onPressed: () {
-              if (widget.onOpenDrawer != null) {
-                widget.onOpenDrawer!();
-              } else {
-                Scaffold.of(ctx).openDrawer();
-              }
-            },
-          ),
-        ),
         title: const Text(
           'Data Kelas',
           style: TextStyle(
@@ -114,7 +47,8 @@ class _AdminDataKelasScreenState extends State<AdminDataKelasScreen> {
           ),
         ),
       ),
-      body: SafeArea(
+      body: statusAsync(lista, () => ref.invalidate(adminKelasProvider)) ??
+          SafeArea(
         child: Column(
           children: [
             // Filter Tingkat Kelas Chips
@@ -356,9 +290,11 @@ class _AdminDataKelasScreenState extends State<AdminDataKelasScreen> {
     );
   }
 
-  void _showAddKelasSheet(BuildContext context) {
+  Future<void> _showAddKelasSheet(BuildContext context) async {
     final namaCtrl = TextEditingController();
-    final waliCtrl = TextEditingController();
+    int? selectedWaliId;
+    final guru = await ref.read(opsiGuruProvider.future);
+    if (!context.mounted) return;
     String selectedTingkat = 'VII';
 
     showModalBottomSheet(
@@ -428,15 +364,21 @@ class _AdminDataKelasScreenState extends State<AdminDataKelasScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-              TextField(
-                controller: waliCtrl,
+              DropdownButtonFormField<int?>(
+                value: selectedWaliId,
                 decoration: InputDecoration(
-                  labelText: 'Nama Wali Kelas',
-                  hintText: 'Contoh: Ust. Hamdan, S.Pd',
+                  labelText: 'Wali Kelas (opsional)',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
+                items: [
+                  const DropdownMenuItem<int?>(
+                      value: null, child: Text('Belum ditentukan')),
+                  for (final g in guru)
+                    DropdownMenuItem<int?>(value: g.id, child: Text(g.label)),
+                ],
+                onChanged: (val) => setModalState(() => selectedWaliId = val),
               ),
               const SizedBox(height: 18),
               ElevatedButton(
@@ -448,36 +390,28 @@ class _AdminDataKelasScreenState extends State<AdminDataKelasScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                onPressed: () {
-                  if (namaCtrl.text.trim().isEmpty ||
-                      waliCtrl.text.trim().isEmpty) {
+                onPressed: () async {
+                  final nama = namaCtrl.text.trim();
+                  if (nama.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Nama kelas dan wali kelas wajib diisi.'),
-                      ),
+                      const SnackBar(content: Text('Nama kelas wajib diisi.')),
                     );
                     return;
                   }
-                  setState(() {
-                    _daftarKelas.insert(
-                      0,
-                      KelasModel(
-                        id: DateTime.now().millisecondsSinceEpoch.toString(),
-                        namaKelas: namaCtrl.text.trim(),
-                        tingkat: selectedTingkat,
-                        namaWali: waliCtrl.text.trim(),
-                        jumlahSiswa: 0,
-                      ),
-                    );
-                  });
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Kelas ${namaCtrl.text.trim()} berhasil ditambahkan.',
-                      ),
-                    ),
+                  final ok = await simpan(
+                    context,
+                    () => ref.read(adminRepositoryProvider).tambahKelas(
+                          tingkat: selectedTingkat,
+                          nama: nama,
+                          waliKelasId: selectedWaliId,
+                        ),
+                    'Kelas $nama berhasil ditambahkan.',
                   );
+                  if (!ok) return;
+                  ref.invalidate(adminKelasProvider);
+                  ref.invalidate(opsiKelasProvider);
+                  ref.invalidate(adminStatistikProvider);
+                  if (ctx.mounted) Navigator.pop(ctx);
                 },
                 child: const Text(
                   'Simpan Kelas',

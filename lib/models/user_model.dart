@@ -1,22 +1,7 @@
-enum UserRole {
-  admin,
-  guru,
-  waliMurid,
-  siswa;
+import '../features/auth/domain/user.dart';
 
-  String get label {
-    switch (this) {
-      case UserRole.admin:
-        return 'Admin';
-      case UserRole.guru:
-        return 'Guru';
-      case UserRole.waliMurid:
-        return 'Wali Murid';
-      case UserRole.siswa:
-        return 'Siswa';
-    }
-  }
-}
+// Layar admin memakai enum role yang sama dengan auth.
+export '../features/auth/domain/user.dart' show UserRole;
 
 class UserModel {
   final String id;

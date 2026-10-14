@@ -1,66 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../features/admin/presentation/admin_providers.dart';
+import '../../features/admin/presentation/admin_widgets.dart';
 import '../../models/user_model.dart';
 
-class AdminPenggunaScreen extends StatefulWidget {
-  final VoidCallback? onOpenDrawer;
-
+class AdminPenggunaScreen extends ConsumerStatefulWidget {
   const AdminPenggunaScreen({
     super.key,
-    this.onOpenDrawer,
   });
 
   @override
-  State<AdminPenggunaScreen> createState() => _AdminPenggunaScreenState();
+  ConsumerState<AdminPenggunaScreen> createState() => _AdminPenggunaScreenState();
 }
 
-class _AdminPenggunaScreenState extends State<AdminPenggunaScreen> {
+class _AdminPenggunaScreenState extends ConsumerState<AdminPenggunaScreen> {
   final TextEditingController _searchController = TextEditingController();
   UserRole? _filterRole;
 
-  final List<UserModel> _users = [
-    const UserModel(
-      id: '1',
-      nama: 'Drs. H. Ahmad Dahlan, M.Pd',
-      email: 'ahmad.dahlan@mtsalfajar.sch.id',
-      role: UserRole.admin,
-    ),
-    const UserModel(
-      id: '2',
-      nama: 'Ust. Zulkifli, S.Pd.I',
-      email: 'zulkifli@mtsalfajar.sch.id',
-      role: UserRole.guru,
-    ),
-    const UserModel(
-      id: '3',
-      nama: 'Ibu Nur Azizah, S.Pd',
-      email: 'nur.azizah@mtsalfajar.sch.id',
-      role: UserRole.guru,
-    ),
-    const UserModel(
-      id: '4',
-      nama: 'Ust. M. Rasyid, Lc',
-      email: 'm.rasyid@mtsalfajar.sch.id',
-      role: UserRole.guru,
-    ),
-    const UserModel(
-      id: '5',
-      nama: 'H. Bambang Setiawan',
-      email: 'bambang.setiawan@gmail.com',
-      role: UserRole.waliMurid,
-    ),
-    const UserModel(
-      id: '6',
-      nama: 'Hj. Siti Mariam',
-      email: 'siti.mariam@yahoo.com',
-      role: UserRole.waliMurid,
-    ),
-    const UserModel(
-      id: '7',
-      nama: 'Muhammad Farhan Al-Ghifari',
-      email: 'farhan.alghifari@siswa.mtsalfajar.sch.id',
-      role: UserRole.siswa,
-    ),
-  ];
+  List<UserModel> _users = const [];
 
   List<UserModel> get _filteredUsers {
     final query = _searchController.text.trim().toLowerCase();
@@ -81,6 +38,8 @@ class _AdminPenggunaScreenState extends State<AdminPenggunaScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lista = ref.watch(adminPenggunaProvider);
+    _users = lista.valueOrNull ?? const [];
     const brandColor = Color(0xFF0D5C3A);
 
     return Scaffold(
@@ -89,18 +48,6 @@ class _AdminPenggunaScreenState extends State<AdminPenggunaScreen> {
         elevation: 0,
         backgroundColor: Colors.white,
         scrolledUnderElevation: 1,
-        leading: Builder(
-          builder: (ctx) => IconButton(
-            icon: const Icon(Icons.menu, color: Color(0xFF1E293B)),
-            onPressed: () {
-              if (widget.onOpenDrawer != null) {
-                widget.onOpenDrawer!();
-              } else {
-                Scaffold.of(ctx).openDrawer();
-              }
-            },
-          ),
-        ),
         title: const Text(
           'Pengguna',
           style: TextStyle(
@@ -110,7 +57,8 @@ class _AdminPenggunaScreenState extends State<AdminPenggunaScreen> {
           ),
         ),
       ),
-      body: SafeArea(
+      body: statusAsync(lista, () => ref.invalidate(adminPenggunaProvider)) ??
+          SafeArea(
         child: Column(
           children: [
             // Search Bar & Filter Chips
@@ -359,7 +307,8 @@ class _AdminPenggunaScreenState extends State<AdminPenggunaScreen> {
 
   void _showAddUserSheet(BuildContext context) {
     final nameCtrl = TextEditingController();
-    final emailCtrl = TextEditingController();
+    final userCtrl = TextEditingController();
+    final passCtrl = TextEditingController();
     UserRole selectedRole = UserRole.guru;
 
     showModalBottomSheet(
@@ -410,11 +359,23 @@ class _AdminPenggunaScreenState extends State<AdminPenggunaScreen> {
               ),
               const SizedBox(height: 12),
               TextField(
-                controller: emailCtrl,
-                keyboardType: TextInputType.emailAddress,
+                controller: userCtrl,
+                autocorrect: false,
                 decoration: InputDecoration(
-                  labelText: 'Email',
-                  hintText: 'nama@mtsalfajar.sch.id',
+                  labelText: 'Username login',
+                  hintText: 'huruf kecil, mis. ahmad.fauzi',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: passCtrl,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Password awal',
+                  hintText: 'minimal 8 karakter',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -429,7 +390,7 @@ class _AdminPenggunaScreenState extends State<AdminPenggunaScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                items: UserRole.values.map((role) {
+                items: UserRole.values.where((r) => r != UserRole.siswa).map((role) {
                   return DropdownMenuItem(
                     value: role,
                     child: Text(role.label),
@@ -451,9 +412,12 @@ class _AdminPenggunaScreenState extends State<AdminPenggunaScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                onPressed: () {
-                  if (nameCtrl.text.trim().isEmpty ||
-                      emailCtrl.text.trim().isEmpty) {
+                onPressed: () async {
+                  final nama = nameCtrl.text.trim();
+                  final perluNama = selectedRole != UserRole.admin;
+                  if (userCtrl.text.trim().isEmpty ||
+                      passCtrl.text.isEmpty ||
+                      (perluNama && nama.isEmpty)) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Harap lengkapi semua data.'),
@@ -461,25 +425,23 @@ class _AdminPenggunaScreenState extends State<AdminPenggunaScreen> {
                     );
                     return;
                   }
-                  setState(() {
-                    _users.insert(
-                      0,
-                      UserModel(
-                        id: DateTime.now().millisecondsSinceEpoch.toString(),
-                        nama: nameCtrl.text.trim(),
-                        email: emailCtrl.text.trim(),
-                        role: selectedRole,
-                      ),
-                    );
-                  });
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Pengguna ${nameCtrl.text.trim()} berhasil ditambahkan.',
-                      ),
-                    ),
+                  final ok = await simpan(
+                    context,
+                    () => ref.read(adminRepositoryProvider).buatAkun(
+                          username: userCtrl.text.trim(),
+                          password: passCtrl.text,
+                          role: selectedRole,
+                          nama: nama,
+                        ),
+                    'Pengguna ${userCtrl.text.trim()} berhasil ditambahkan.',
                   );
+                  if (!ok) return;
+                  ref.invalidate(adminPenggunaProvider);
+                  ref.invalidate(adminGuruProvider);
+                  ref.invalidate(opsiGuruProvider);
+                  ref.invalidate(opsiWaliMuridProvider);
+                  ref.invalidate(adminStatistikProvider);
+                  if (ctx.mounted) Navigator.pop(ctx);
                 },
                 child: const Text(
                   'Simpan Pengguna',

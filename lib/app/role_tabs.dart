@@ -4,6 +4,11 @@ import '../core/widgets/placeholder_page.dart';
 import '../features/auth/domain/user.dart';
 import '../features/auth/presentation/profile_page.dart';
 import '../features/dashboard/presentation/dashboard_page.dart';
+import '../screens/admin/admin_dashboard_screen.dart';
+import '../screens/admin/admin_data_guru_screen.dart';
+import '../screens/admin/admin_data_kelas_screen.dart';
+import '../screens/admin/admin_data_siswa_screen.dart';
+import '../screens/admin/admin_pengguna_screen.dart';
 
 /// Satu tab = satu cabang navigasi bawah milik sebuah role.
 class AppTab {
@@ -59,11 +64,33 @@ AppTab _segera({
       builder: () => PlaceholderPage(title: label, sprint: sprint),
     );
 
-/// Daftar tab per role. Admin sengaja minim: pekerjaan admin ada di web.
+AppTab _admin(String slug, String label, IconData icon, IconData selectedIcon,
+        Widget Function() builder) =>
+    AppTab(
+      slug: slug,
+      label: label,
+      icon: icon,
+      selectedIcon: selectedIcon,
+      builder: builder,
+    );
+
+/// Daftar tab per role.
 List<AppTab> tabsFor(UserRole role) {
   switch (role) {
     case UserRole.admin:
-      return [_beranda(), _profil()];
+      return [
+        _admin('beranda', 'Beranda', Icons.home_outlined, Icons.home,
+            () => const AdminDashboardScreen()),
+        _admin('siswa', 'Siswa', Icons.school_outlined, Icons.school,
+            () => const AdminDataSiswaScreen()),
+        _admin('guru', 'Guru', Icons.badge_outlined, Icons.badge,
+            () => const AdminDataGuruScreen()),
+        _admin('kelas', 'Kelas', Icons.meeting_room_outlined,
+            Icons.meeting_room, () => const AdminDataKelasScreen()),
+        _admin('pengguna', 'Pengguna', Icons.manage_accounts_outlined,
+            Icons.manage_accounts, () => const AdminPenggunaScreen()),
+        _profil(),
+      ];
     case UserRole.guru:
       return [
         _beranda(),

@@ -1,58 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../features/admin/presentation/admin_providers.dart';
+import '../../features/admin/presentation/admin_widgets.dart';
 import '../../models/dashboard_model.dart';
 import '../../widgets/stat_card_widget.dart';
 
-class AdminDashboardScreen extends StatelessWidget {
-  final VoidCallback? onOpenDrawer;
-
-  const AdminDashboardScreen({
-    super.key,
-    this.onOpenDrawer,
-  });
-
-  final DashboardStatistik _statistik = const DashboardStatistik(
-    totalSiswa: 348,
-    totalGuru: 24,
-    totalKelas: 12,
-    totalOrangTua: 340,
-  );
-
-  final List<ProgressInputNilai> _progresList = const [
-    ProgressInputNilai(
-      kelas: 'VII-A',
-      mapel: "Al-Qur'an Hadits",
-      namaGuru: 'Ust. Zulkifli, S.Pd.I',
-      persen: 85,
-    ),
-    ProgressInputNilai(
-      kelas: 'VIII-B',
-      mapel: 'Matematika',
-      namaGuru: 'Ibu Nur Azizah, S.Pd',
-      persen: 60,
-    ),
-    ProgressInputNilai(
-      kelas: 'IX-A',
-      mapel: 'Fiqih',
-      namaGuru: 'Ust. M. Rasyid, Lc',
-      persen: 100,
-    ),
-    ProgressInputNilai(
-      kelas: 'VII-C',
-      mapel: 'Bahasa Arab',
-      namaGuru: 'Ust. Ahmad Fauzi',
-      persen: 45,
-    ),
-    ProgressInputNilai(
-      kelas: 'VIII-A',
-      mapel: 'IPA Terpadu',
-      namaGuru: 'Ibu Siti Rahma, S.Si',
-      persen: 90,
-    ),
-  ];
+class AdminDashboardScreen extends ConsumerWidget {
+  const AdminDashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    const brandColor = Color(0xFF0D5C3A);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final statistik = ref.watch(adminStatistikProvider);
+    final progres = ref.watch(adminProgresProvider);
+    final periode = ref.watch(tahunAjaranAktifProvider).valueOrNull?.label ?? '';
+    final status = statusAsync(statistik, () {
+      ref.invalidate(adminStatistikProvider);
+      ref.invalidate(adminProgresProvider);
+    }) ?? statusAsync(progres, () => ref.invalidate(adminProgresProvider));
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAF9),
@@ -60,18 +24,6 @@ class AdminDashboardScreen extends StatelessWidget {
         elevation: 0,
         backgroundColor: Colors.white,
         scrolledUnderElevation: 1,
-        leading: Builder(
-          builder: (ctx) => IconButton(
-            icon: const Icon(Icons.menu, color: Color(0xFF1E293B)),
-            onPressed: () {
-              if (onOpenDrawer != null) {
-                onOpenDrawer!();
-              } else {
-                Scaffold.of(ctx).openDrawer();
-              }
-            },
-          ),
-        ),
         title: const Text(
           'Dashboard',
           style: TextStyle(
@@ -92,7 +44,14 @@ class AdminDashboardScreen extends StatelessWidget {
           const SizedBox(width: 4),
         ],
       ),
-      body: SafeArea(
+      body: status ?? _isi(context, statistik.value!, progres.value!, periode),
+    );
+  }
+
+  Widget _isi(BuildContext context, DashboardStatistik s,
+      List<ProgressInputNilai> daftar, String periode) {
+    const brandColor = Color(0xFF0D5C3A);
+    return SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Column(
@@ -109,25 +68,25 @@ class AdminDashboardScreen extends StatelessWidget {
                 children: [
                   StatCardWidget(
                     title: 'Siswa',
-                    count: '${_statistik.totalSiswa}',
+                    count: '${s.totalSiswa}',
                     icon: Icons.school_outlined,
                     accentColor: const Color(0xFF0D5C3A),
                   ),
                   StatCardWidget(
                     title: 'Guru',
-                    count: '${_statistik.totalGuru}',
+                    count: '${s.totalGuru}',
                     icon: Icons.person_outline,
                     accentColor: const Color(0xFF2563EB),
                   ),
                   StatCardWidget(
                     title: 'Kelas',
-                    count: '${_statistik.totalKelas}',
+                    count: '${s.totalKelas}',
                     icon: Icons.meeting_room_outlined,
                     accentColor: const Color(0xFFD97706),
                   ),
                   StatCardWidget(
                     title: 'Orang Tua',
-                    count: '${_statistik.totalOrangTua}',
+                    count: '${s.totalOrangTua}',
                     icon: Icons.family_restroom_outlined,
                     accentColor: const Color(0xFF7C3AED),
                   ),
@@ -149,7 +108,7 @@ class AdminDashboardScreen extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'Semester 1 2025/2026',
+                    periode,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
@@ -165,10 +124,10 @@ class AdminDashboardScreen extends StatelessWidget {
               ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: _progresList.length,
+                itemCount: daftar.length,
                 separatorBuilder: (context, index) => const SizedBox(height: 10),
                 itemBuilder: (context, index) {
-                  final item = _progresList[index];
+                  final item = daftar[index];
                   final isCompleted = item.persen >= 100;
 
                   return Container(
@@ -288,7 +247,6 @@ class AdminDashboardScreen extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 }

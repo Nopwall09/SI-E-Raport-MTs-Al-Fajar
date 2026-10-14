@@ -1,90 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../features/admin/presentation/admin_providers.dart';
+import '../../features/admin/presentation/admin_widgets.dart';
 import '../../models/siswa_model.dart';
 
-class AdminDataSiswaScreen extends StatefulWidget {
-  final VoidCallback? onOpenDrawer;
-
+class AdminDataSiswaScreen extends ConsumerStatefulWidget {
   const AdminDataSiswaScreen({
     super.key,
-    this.onOpenDrawer,
   });
 
   @override
-  State<AdminDataSiswaScreen> createState() => _AdminDataSiswaScreenState();
+  ConsumerState<AdminDataSiswaScreen> createState() => _AdminDataSiswaScreenState();
 }
 
-class _AdminDataSiswaScreenState extends State<AdminDataSiswaScreen> {
+class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _selectedKelas = 'Semua';
 
-  final List<String> _kelasList = [
-    'Semua',
-    'VII-A',
-    'VII-B',
-    'VIII-A',
-    'VIII-B',
-    'IX-A',
-    'IX-B',
-  ];
+  List<String> _kelasList = const [];
 
-  final List<SiswaModel> _daftarSiswa = [
-    const SiswaModel(
-      id: '1',
-      nama: 'Muhammad Farhan Al-Ghifari',
-      nisn: '0089765432',
-      kelas: 'VII-A',
-      jenisKelamin: 'L',
-      namaWali: 'H. Bambang Setiawan',
-    ),
-    const SiswaModel(
-      id: '2',
-      nama: 'Aisyah Putri Azzahra',
-      nisn: '0081234567',
-      kelas: 'VII-A',
-      jenisKelamin: 'P',
-      namaWali: 'Hj. Siti Mariam',
-    ),
-    const SiswaModel(
-      id: '3',
-      nama: 'Ahmad Bilal Al-Kautsar',
-      nisn: '0087654321',
-      kelas: 'VII-B',
-      jenisKelamin: 'L',
-      namaWali: 'Rahmat Hidayat',
-    ),
-    const SiswaModel(
-      id: '4',
-      nama: 'Fatimah Zahra Maulida',
-      nisn: '0078901234',
-      kelas: 'VIII-A',
-      jenisKelamin: 'P',
-      namaWali: 'Ir. Hendra Wijaya',
-    ),
-    const SiswaModel(
-      id: '5',
-      nama: 'Rizky Ramadhan',
-      nisn: '0076543210',
-      kelas: 'VIII-B',
-      jenisKelamin: 'L',
-      namaWali: 'Subhan Santoso',
-    ),
-    const SiswaModel(
-      id: '6',
-      nama: 'Zaskia Nurul Izzati',
-      nisn: '0065432198',
-      kelas: 'IX-A',
-      jenisKelamin: 'P',
-      namaWali: 'Drs. H. Mulyadi',
-    ),
-    const SiswaModel(
-      id: '7',
-      nama: 'Zidan Al-Mubarak',
-      nisn: '0069876543',
-      kelas: 'IX-B',
-      jenisKelamin: 'L',
-      namaWali: 'Agus Salim',
-    ),
-  ];
+  List<SiswaModel> _daftarSiswa = const [];
 
   List<SiswaModel> get _filteredSiswa {
     final query = _searchController.text.trim().toLowerCase();
@@ -106,6 +41,12 @@ class _AdminDataSiswaScreenState extends State<AdminDataSiswaScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lista = ref.watch(adminSiswaProvider);
+    _daftarSiswa = lista.valueOrNull ?? const [];
+    _kelasList = [
+      'Semua',
+      ...?ref.watch(opsiKelasProvider).valueOrNull?.map((o) => o.label),
+    ];
     const brandColor = Color(0xFF0D5C3A);
 
     return Scaffold(
@@ -114,18 +55,6 @@ class _AdminDataSiswaScreenState extends State<AdminDataSiswaScreen> {
         elevation: 0,
         backgroundColor: Colors.white,
         scrolledUnderElevation: 1,
-        leading: Builder(
-          builder: (ctx) => IconButton(
-            icon: const Icon(Icons.menu, color: Color(0xFF1E293B)),
-            onPressed: () {
-              if (widget.onOpenDrawer != null) {
-                widget.onOpenDrawer!();
-              } else {
-                Scaffold.of(ctx).openDrawer();
-              }
-            },
-          ),
-        ),
         title: const Text(
           'Data Siswa',
           style: TextStyle(
@@ -135,7 +64,8 @@ class _AdminDataSiswaScreenState extends State<AdminDataSiswaScreen> {
           ),
         ),
       ),
-      body: SafeArea(
+      body: statusAsync(lista, () => ref.invalidate(adminSiswaProvider)) ??
+          SafeArea(
         child: Column(
           children: [
             // Search Box & Filter Kelas
@@ -467,12 +397,30 @@ class _AdminDataSiswaScreenState extends State<AdminDataSiswaScreen> {
     );
   }
 
-  void _showAddSiswaSheet(BuildContext context) {
+  Future<void> _showAddSiswaSheet(BuildContext context) async {
+    final kelas = await ref.read(opsiKelasProvider.future);
+    final wali = await ref.read(opsiWaliMuridProvider.future);
+    if (!context.mounted) return;
+    if (kelas.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Buat kelas dulu sebelum menambah siswa.')),
+      );
+      return;
+    }
+
     final nameCtrl = TextEditingController();
+    final nisCtrl = TextEditingController();
     final nisnCtrl = TextEditingController();
-    final waliCtrl = TextEditingController();
-    String selectedKelas = 'VII-A';
+    int selectedKelas = kelas.first.id;
+    int? selectedWali;
     String selectedJK = 'L';
+    DateTime? tglLahir;
+
+    InputDecoration dekor(String label, {String? hint}) => InputDecoration(
+          labelText: label,
+          hintText: hint,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        );
 
     showModalBottomSheet(
       context: context,
@@ -482,7 +430,7 @@ class _AdminDataSiswaScreenState extends State<AdminDataSiswaScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) => Padding(
+        builder: (ctx, setModalState) => SingleChildScrollView(
           padding: EdgeInsets.only(
             top: 20,
             left: 20,
@@ -498,10 +446,7 @@ class _AdminDataSiswaScreenState extends State<AdminDataSiswaScreen> {
                 children: [
                   const Text(
                     'Tambah Siswa Baru',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close),
@@ -512,45 +457,40 @@ class _AdminDataSiswaScreenState extends State<AdminDataSiswaScreen> {
               const SizedBox(height: 12),
               TextField(
                 controller: nameCtrl,
-                decoration: InputDecoration(
-                  labelText: 'Nama Lengkap Siswa',
-                  hintText: 'Contoh: Ahmad Fauzan',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: nisnCtrl,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'NISN',
-                  hintText: '10 digit angka',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
+                decoration:
+                    dekor('Nama Lengkap Siswa', hint: 'Contoh: Ahmad Fauzan'),
               ),
               const SizedBox(height: 10),
               Row(
                 children: [
                   Expanded(
-                    child: DropdownButtonFormField<String>(
+                    child: TextField(
+                      controller: nisCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: dekor('NIS'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextField(
+                      controller: nisnCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: dekor('NISN (opsional)'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<int>(
                       value: selectedKelas,
-                      decoration: InputDecoration(
-                        labelText: 'Kelas',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      items: _kelasList
-                          .where((k) => k != 'Semua')
-                          .map((k) => DropdownMenuItem(
-                                value: k,
-                                child: Text(k),
-                              ))
-                          .toList(),
+                      decoration: dekor('Kelas'),
+                      items: [
+                        for (final k in kelas)
+                          DropdownMenuItem(value: k.id, child: Text(k.label)),
+                      ],
                       onChanged: (val) {
                         if (val != null) {
                           setModalState(() => selectedKelas = val);
@@ -562,17 +502,10 @@ class _AdminDataSiswaScreenState extends State<AdminDataSiswaScreen> {
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       value: selectedJK,
-                      decoration: InputDecoration(
-                        labelText: 'Jenis Kelamin',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
+                      decoration: dekor('Jenis Kelamin'),
                       items: const [
-                        DropdownMenuItem(
-                            value: 'L', child: Text('Laki-laki')),
-                        DropdownMenuItem(
-                            value: 'P', child: Text('Perempuan')),
+                        DropdownMenuItem(value: 'L', child: Text('Laki-laki')),
+                        DropdownMenuItem(value: 'P', child: Text('Perempuan')),
                       ],
                       onChanged: (val) {
                         if (val != null) {
@@ -584,15 +517,38 @@ class _AdminDataSiswaScreenState extends State<AdminDataSiswaScreen> {
                 ],
               ),
               const SizedBox(height: 10),
-              TextField(
-                controller: waliCtrl,
-                decoration: InputDecoration(
-                  labelText: 'Nama Orang Tua / Wali',
-                  hintText: 'Nama lengkap wali',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+              InkWell(
+                onTap: () async {
+                  final tgl = await showDatePicker(
+                    context: ctx,
+                    initialDate: tglLahir ?? DateTime(2012),
+                    firstDate: DateTime(1990),
+                    lastDate: DateTime.now(),
+                  );
+                  if (tgl != null) setModalState(() => tglLahir = tgl);
+                },
+                child: InputDecorator(
+                  decoration: dekor('Tanggal Lahir'),
+                  child: Text(
+                    tglLahir == null
+                        ? 'Pilih tanggal'
+                        : '${tglLahir!.day.toString().padLeft(2, '0')}-'
+                            '${tglLahir!.month.toString().padLeft(2, '0')}-'
+                            '${tglLahir!.year}',
                   ),
                 ),
+              ),
+              const SizedBox(height: 10),
+              DropdownButtonFormField<int?>(
+                value: selectedWali,
+                decoration: dekor('Orang Tua / Wali (opsional)'),
+                items: [
+                  const DropdownMenuItem<int?>(
+                      value: null, child: Text('Belum terhubung')),
+                  for (final w in wali)
+                    DropdownMenuItem<int?>(value: w.id, child: Text(w.label)),
+                ],
+                onChanged: (val) => setModalState(() => selectedWali = val),
               ),
               const SizedBox(height: 18),
               ElevatedButton(
@@ -604,37 +560,38 @@ class _AdminDataSiswaScreenState extends State<AdminDataSiswaScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                onPressed: () {
-                  if (nameCtrl.text.trim().isEmpty ||
-                      nisnCtrl.text.trim().isEmpty) {
+                onPressed: () async {
+                  final nama = nameCtrl.text.trim();
+                  if (nama.isEmpty ||
+                      nisCtrl.text.trim().isEmpty ||
+                      tglLahir == null) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Nama dan NISN wajib diisi.'),
+                        content:
+                            Text('Nama, NIS, dan tanggal lahir wajib diisi.'),
                       ),
                     );
                     return;
                   }
-                  setState(() {
-                    _daftarSiswa.insert(
-                      0,
-                      SiswaModel(
-                        id: DateTime.now().millisecondsSinceEpoch.toString(),
-                        nama: nameCtrl.text.trim(),
-                        nisn: nisnCtrl.text.trim(),
-                        kelas: selectedKelas,
-                        jenisKelamin: selectedJK,
-                        namaWali: waliCtrl.text.trim(),
-                      ),
-                    );
-                  });
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Siswa ${nameCtrl.text.trim()} berhasil ditambahkan.',
-                      ),
-                    ),
+                  final nisn = nisnCtrl.text.trim();
+                  final ok = await simpan(
+                    context,
+                    () => ref.read(adminRepositoryProvider).tambahSiswa(
+                          nama: nama,
+                          nis: nisCtrl.text.trim(),
+                          nisn: nisn.isEmpty ? null : nisn,
+                          jk: selectedJK,
+                          tglLahir: tglLahir!,
+                          kelasId: selectedKelas,
+                          waliMuridId: selectedWali,
+                        ),
+                    'Siswa $nama berhasil ditambahkan.',
                   );
+                  if (!ok) return;
+                  ref.invalidate(adminSiswaProvider);
+                  ref.invalidate(adminKelasProvider);
+                  ref.invalidate(adminStatistikProvider);
+                  if (ctx.mounted) Navigator.pop(ctx);
                 },
                 child: const Text(
                   'Simpan Data Siswa',

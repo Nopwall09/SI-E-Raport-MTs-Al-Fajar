@@ -35,6 +35,7 @@ class AppException implements Exception {
     if (error is AuthRetryableFetchException) return _network;
     if (error is AuthException) return _fromAuth(error);
     if (error is PostgrestException) return _fromPostgrest(error);
+    if (error is FunctionException) return _fromFunction(error);
     if (error is TimeoutException) {
       return const AppException(
         AppErrorType.timeout,
@@ -71,6 +72,20 @@ class AppException implements Exception {
       AppErrorType.unknown,
       'Terjadi kesalahan saat masuk. Coba lagi.',
     );
+  }
+
+  /// Edge Function kita mengirim `{"error": "<pesan Indonesia>"}`.
+  static AppException _fromFunction(FunctionException error) {
+    final detail = error.details;
+    final pesan = detail is Map ? detail['error'] as String? : null;
+    final type = switch (error.status) {
+      400 => AppErrorType.validation,
+      401 => AppErrorType.unauthorized,
+      403 => AppErrorType.forbidden,
+      409 => AppErrorType.conflict,
+      _ => AppErrorType.server,
+    };
+    return AppException(type, pesan ?? 'Server sedang bermasalah. Coba lagi nanti.');
   }
 
   static AppException _fromPostgrest(PostgrestException error) {

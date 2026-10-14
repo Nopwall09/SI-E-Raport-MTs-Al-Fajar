@@ -12,20 +12,12 @@ masih berupa halaman sementara.
 
 ```bash
 flutter pub get
-flutter run                       # data contoh, tanpa Supabase
+flutter run
 ```
 
-Akun contoh (password bebas, asal tidak kosong):
-`admin`, `guru`, `walikelas`, `siswa`, `wali`.
-
-Memakai Supabase asli:
-
-```bash
-flutter run \
-  --dart-define=USE_FAKE_API=false \
-  --dart-define=SUPABASE_URL=https://xxxx.supabase.co \
-  --dart-define=SUPABASE_PUBLISHABLE_KEY=eyJ...
-```
+Aplikasi langsung tersambung ke Supabase proyek ini. Semua akun contoh
+memakai password `123456`: `admin`, `guru1`-`guru5`, `wali1`-`wali6`,
+`siswa1`-`siswa3`.
 
 Anon key boleh ada di aplikasi karena keamanan dijaga RLS. Service role key
 tidak boleh pernah masuk ke aplikasi atau repo.

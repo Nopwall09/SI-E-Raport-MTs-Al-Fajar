@@ -1,75 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../features/admin/presentation/admin_providers.dart';
+import '../../features/admin/presentation/admin_widgets.dart';
 import '../../models/guru_model.dart';
+import '../../models/user_model.dart';
 
-class AdminDataGuruScreen extends StatefulWidget {
-  final VoidCallback? onOpenDrawer;
-
+class AdminDataGuruScreen extends ConsumerStatefulWidget {
   const AdminDataGuruScreen({
     super.key,
-    this.onOpenDrawer,
   });
 
   @override
-  State<AdminDataGuruScreen> createState() => _AdminDataGuruScreenState();
+  ConsumerState<AdminDataGuruScreen> createState() => _AdminDataGuruScreenState();
 }
 
-class _AdminDataGuruScreenState extends State<AdminDataGuruScreen> {
+class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
   final TextEditingController _searchController = TextEditingController();
 
-  final List<GuruModel> _daftarGuru = [
-    const GuruModel(
-      id: '1',
-      nama: 'Ust. Zulkifli, S.Pd.I',
-      nip: '198503152010011012',
-      mapel: "Al-Qur'an Hadits",
-      waliKelas: 'VII-A',
-      email: 'zulkifli@mtsalfajar.sch.id',
-      telepon: '081234567890',
-    ),
-    const GuruModel(
-      id: '2',
-      nama: 'Ibu Nur Azizah, S.Pd',
-      nip: '198906222015022008',
-      mapel: 'Matematika',
-      waliKelas: 'VIII-B',
-      email: 'nur.azizah@mtsalfajar.sch.id',
-      telepon: '081234567891',
-    ),
-    const GuruModel(
-      id: '3',
-      nama: 'Ust. M. Rasyid, Lc',
-      nip: '198711092012011005',
-      mapel: 'Fiqih',
-      waliKelas: 'IX-A',
-      email: 'm.rasyid@mtsalfajar.sch.id',
-      telepon: '081234567892',
-    ),
-    const GuruModel(
-      id: '4',
-      nama: 'Ust. Ahmad Fauzi, S.Pd.I',
-      nip: '199002142018031002',
-      mapel: 'Bahasa Arab',
-      email: 'ahmad.fauzi@mtsalfajar.sch.id',
-      telepon: '081234567893',
-    ),
-    const GuruModel(
-      id: '5',
-      nama: 'Ibu Siti Rahma, S.Si',
-      nip: '199204182019022004',
-      mapel: 'IPA Terpadu',
-      waliKelas: 'VIII-A',
-      email: 'siti.rahma@mtsalfajar.sch.id',
-      telepon: '081234567894',
-    ),
-    const GuruModel(
-      id: '6',
-      nama: 'Bpk. Hendra Wijaya, M.Pd',
-      nip: '198207102008011003',
-      mapel: 'Bahasa Inggris',
-      email: 'hendra.wijaya@mtsalfajar.sch.id',
-      telepon: '081234567895',
-    ),
-  ];
+  List<GuruModel> _daftarGuru = const [];
 
   List<GuruModel> get _filteredGuru {
     final query = _searchController.text.trim().toLowerCase();
@@ -89,6 +37,8 @@ class _AdminDataGuruScreenState extends State<AdminDataGuruScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lista = ref.watch(adminGuruProvider);
+    _daftarGuru = lista.valueOrNull ?? const [];
     const brandColor = Color(0xFF0D5C3A);
 
     return Scaffold(
@@ -97,18 +47,6 @@ class _AdminDataGuruScreenState extends State<AdminDataGuruScreen> {
         elevation: 0,
         backgroundColor: Colors.white,
         scrolledUnderElevation: 1,
-        leading: Builder(
-          builder: (ctx) => IconButton(
-            icon: const Icon(Icons.menu, color: Color(0xFF1E293B)),
-            onPressed: () {
-              if (widget.onOpenDrawer != null) {
-                widget.onOpenDrawer!();
-              } else {
-                Scaffold.of(ctx).openDrawer();
-              }
-            },
-          ),
-        ),
         title: const Text(
           'Data Guru',
           style: TextStyle(
@@ -118,7 +56,8 @@ class _AdminDataGuruScreenState extends State<AdminDataGuruScreen> {
           ),
         ),
       ),
-      body: SafeArea(
+      body: statusAsync(lista, () => ref.invalidate(adminGuruProvider)) ??
+          SafeArea(
         child: Column(
           children: [
             // Search Input Container (Cari...)
@@ -398,8 +337,9 @@ class _AdminDataGuruScreenState extends State<AdminDataGuruScreen> {
   void _showAddGuruSheet(BuildContext context) {
     final nameCtrl = TextEditingController();
     final nipCtrl = TextEditingController();
-    final mapelCtrl = TextEditingController();
-    final emailCtrl = TextEditingController();
+    final hpCtrl = TextEditingController();
+    final userCtrl = TextEditingController();
+    final passCtrl = TextEditingController();
 
     showModalBottomSheet(
       context: context,
@@ -460,10 +400,11 @@ class _AdminDataGuruScreenState extends State<AdminDataGuruScreen> {
             ),
             const SizedBox(height: 10),
             TextField(
-              controller: mapelCtrl,
+              controller: hpCtrl,
+              keyboardType: TextInputType.phone,
               decoration: InputDecoration(
-                labelText: 'Mata Pelajaran yang Diampu',
-                hintText: "Contoh: Fiqih / Matematika",
+                labelText: 'No. HP (opsional)',
+                hintText: '08xxxxxxxxxx',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -471,11 +412,23 @@ class _AdminDataGuruScreenState extends State<AdminDataGuruScreen> {
             ),
             const SizedBox(height: 10),
             TextField(
-              controller: emailCtrl,
-              keyboardType: TextInputType.emailAddress,
+              controller: userCtrl,
+              autocorrect: false,
               decoration: InputDecoration(
-                labelText: 'Email Resmi',
-                hintText: 'guru@mtsalfajar.sch.id',
+                labelText: 'Username login',
+                hintText: 'huruf kecil, mis. ahmad.fauzi',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: passCtrl,
+              obscureText: true,
+              decoration: InputDecoration(
+                labelText: 'Password awal',
+                hintText: 'minimal 8 karakter',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -491,37 +444,36 @@ class _AdminDataGuruScreenState extends State<AdminDataGuruScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              onPressed: () {
+              onPressed: () async {
                 if (nameCtrl.text.trim().isEmpty ||
-                    nipCtrl.text.trim().isEmpty ||
-                    mapelCtrl.text.trim().isEmpty) {
+                    userCtrl.text.trim().isEmpty ||
+                    passCtrl.text.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Nama, NIP, dan Mapel wajib diisi.'),
+                      content: Text('Nama, username, dan password wajib diisi.'),
                     ),
                   );
                   return;
                 }
-                setState(() {
-                  _daftarGuru.insert(
-                    0,
-                    GuruModel(
-                      id: DateTime.now().millisecondsSinceEpoch.toString(),
-                      nama: nameCtrl.text.trim(),
-                      nip: nipCtrl.text.trim(),
-                      mapel: mapelCtrl.text.trim(),
-                      email: emailCtrl.text.trim(),
-                    ),
-                  );
-                });
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Guru ${nameCtrl.text.trim()} berhasil ditambahkan.',
-                    ),
-                  ),
+                final nama = nameCtrl.text.trim();
+                final ok = await simpan(
+                  context,
+                  () => ref.read(adminRepositoryProvider).buatAkun(
+                        username: userCtrl.text.trim(),
+                        password: passCtrl.text,
+                        role: UserRole.guru,
+                        nama: nama,
+                        nip: nipCtrl.text,
+                        noHp: hpCtrl.text,
+                      ),
+                  'Guru $nama berhasil ditambahkan.',
                 );
+                if (!ok) return;
+                ref.invalidate(adminGuruProvider);
+                ref.invalidate(adminPenggunaProvider);
+                ref.invalidate(opsiGuruProvider);
+                ref.invalidate(adminStatistikProvider);
+                if (ctx.mounted) Navigator.pop(ctx);
               },
               child: const Text(
                 'Simpan Data Guru',

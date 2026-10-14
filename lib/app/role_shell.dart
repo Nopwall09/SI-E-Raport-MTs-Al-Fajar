@@ -31,6 +31,10 @@ class RoleShell extends ConsumerWidget {
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: NavigationBar(
+        // 6 tab (admin) terlalu sempit kalau semua label tampil.
+        labelBehavior: visible.length > 5
+            ? NavigationDestinationLabelBehavior.onlyShowSelected
+            : NavigationDestinationLabelBehavior.alwaysShow,
         selectedIndex: selected < 0 ? 0 : selected,
         onDestinationSelected: (index) => navigationShell.goBranch(
           visible[index],
