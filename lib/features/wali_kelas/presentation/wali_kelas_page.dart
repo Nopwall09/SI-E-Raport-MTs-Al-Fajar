@@ -15,8 +15,9 @@ final progresKelasProvider = FutureProvider<List<SiswaProgres>>((ref) async {
   final kelas = ref.watch(authControllerProvider).value?.waliKelas;
   if (kelas == null) return const [];
   final ta = await ref.watch(tahunAjaranAktifProvider.future);
-  return WaliKelasRepository(ref.watch(supabaseClientProvider))
-      .progres(kelasId: kelas.kelasId, semester: ta.semester);
+  return WaliKelasRepository(
+    ref.watch(supabaseClientProvider),
+  ).progres(kelasId: kelas.kelasId, semester: ta.semester);
 });
 
 /// Tab "Wali kelas": progres nilai UTS tiap siswa di kelas wali.
@@ -30,7 +31,8 @@ class WaliKelasPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text('Kelas ${kelas?.namaKelas ?? ''}')),
-      body: statusAsync(data, () => ref.invalidate(progresKelasProvider)) ??
+      body:
+          statusAsync(data, () => ref.invalidate(progresKelasProvider)) ??
           RefreshIndicator(
             color: kBrand,
             onRefresh: () async {
@@ -44,10 +46,8 @@ class WaliKelasPage extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
               itemCount: data.value!.length,
               separatorBuilder: (_, _) => const SizedBox(height: 10),
-              itemBuilder: (context, i) => FadeSlideIn(
-                index: i,
-                child: _KartuSiswa(data.value![i]),
-              ),
+              itemBuilder: (context, i) =>
+                  FadeSlideIn(index: i, child: _KartuSiswa(data.value![i])),
             ),
           ),
     );
@@ -118,8 +118,8 @@ class _KartuSiswa extends StatelessWidget {
                       m.nilai == null
                           ? 'Belum'
                           : (m.nilai! % 1 == 0
-                              ? m.nilai!.toInt().toString()
-                              : m.nilai.toString()),
+                                ? m.nilai!.toInt().toString()
+                                : m.nilai.toString()),
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         color: m.nilai == null ? kMuted : kText,

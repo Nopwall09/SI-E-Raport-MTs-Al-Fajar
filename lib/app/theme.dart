@@ -8,7 +8,9 @@ import 'package:flutter/material.dart';
 //   wadah (kartu, sheet isi) 16 | kontrol (tombol, input) 12 | sheet atas 24 | chip pil
 
 const kBrand = Color(0xFF0D5C3A);
-const kBrandSoft = Color(0xFFE5F1EB); // tint aksen untuk ikon dan state terpilih
+const kBrandSoft = Color(
+  0xFFE5F1EB,
+); // tint aksen untuk ikon dan state terpilih
 const kBg = Color(0xFFF5F7F6);
 const kField = Color(0xFFEEF2F0);
 const kBorder = Color(0xFFE1E7E4);
@@ -35,9 +37,9 @@ ThemeData buildTheme() {
   );
 
   OutlineInputBorder border(Color c, [double w = 1]) => OutlineInputBorder(
-        borderRadius: BorderRadius.circular(kRadiusControl),
-        borderSide: BorderSide(color: c, width: w),
-      );
+    borderRadius: BorderRadius.circular(kRadiusControl),
+    borderSide: BorderSide(color: c, width: w),
+  );
 
   final base = ThemeData(useMaterial3: true, colorScheme: scheme);
   final text = base.textTheme.apply(bodyColor: kText, displayColor: kText);
@@ -45,10 +47,14 @@ ThemeData buildTheme() {
   return base.copyWith(
     scaffoldBackgroundColor: kBg,
     textTheme: text.copyWith(
-      headlineSmall: text.headlineSmall
-          ?.copyWith(fontWeight: FontWeight.w700, letterSpacing: -0.4),
-      titleLarge: text.titleLarge
-          ?.copyWith(fontWeight: FontWeight.w700, letterSpacing: -0.2),
+      headlineSmall: text.headlineSmall?.copyWith(
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.4,
+      ),
+      titleLarge: text.titleLarge?.copyWith(
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.2,
+      ),
       titleMedium: text.titleMedium?.copyWith(fontWeight: FontWeight.w600),
       bodyMedium: text.bodyMedium?.copyWith(height: 1.4),
       bodySmall: text.bodySmall?.copyWith(color: kMuted, height: 1.4),
@@ -60,7 +66,10 @@ ThemeData buildTheme() {
       scrolledUnderElevation: 0,
       centerTitle: false,
       titleTextStyle: text.titleLarge?.copyWith(
-          fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -0.2),
+        fontSize: 18,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.2,
+      ),
     ),
     cardTheme: CardThemeData(
       color: Colors.white,
@@ -71,7 +80,11 @@ ThemeData buildTheme() {
         side: const BorderSide(color: kBorder),
       ),
     ),
-    dividerTheme: const DividerThemeData(color: kBorder, space: 1, thickness: 1),
+    dividerTheme: const DividerThemeData(
+      color: kBorder,
+      space: 1,
+      thickness: 1,
+    ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: Colors.white,
@@ -126,8 +139,10 @@ ThemeData buildTheme() {
       focusElevation: 0,
       hoverElevation: 0,
       highlightElevation: 0,
-      extendedTextStyle:
-          const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+      extendedTextStyle: const TextStyle(
+        fontSize: 15,
+        fontWeight: FontWeight.w600,
+      ),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(kRadiusCard),
       ),
@@ -138,17 +153,21 @@ ThemeData buildTheme() {
       elevation: 0,
       height: 68,
       indicatorColor: kBrandSoft,
-      iconTheme: WidgetStateProperty.resolveWith((s) => IconThemeData(
-            color: s.contains(WidgetState.selected) ? kBrand : kMuted,
-            size: 24,
-          )),
-      labelTextStyle: WidgetStateProperty.resolveWith((s) => TextStyle(
-            fontSize: 12,
-            fontWeight: s.contains(WidgetState.selected)
-                ? FontWeight.w700
-                : FontWeight.w500,
-            color: s.contains(WidgetState.selected) ? kBrand : kMuted,
-          )),
+      iconTheme: WidgetStateProperty.resolveWith(
+        (s) => IconThemeData(
+          color: s.contains(WidgetState.selected) ? kBrand : kMuted,
+          size: 24,
+        ),
+      ),
+      labelTextStyle: WidgetStateProperty.resolveWith(
+        (s) => TextStyle(
+          fontSize: 12,
+          fontWeight: s.contains(WidgetState.selected)
+              ? FontWeight.w700
+              : FontWeight.w500,
+          color: s.contains(WidgetState.selected) ? kBrand : kMuted,
+        ),
+      ),
     ),
     bottomSheetTheme: const BottomSheetThemeData(
       backgroundColor: Colors.white,

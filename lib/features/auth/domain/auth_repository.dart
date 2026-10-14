@@ -2,10 +2,7 @@ import 'user.dart';
 
 abstract class AuthRepository {
   /// Melempar `AppException` bila gagal.
-  Future<AppUser> login({
-    required String username,
-    required String password,
-  });
+  Future<AppUser> login({required String username, required String password});
 
   /// Mengembalikan null bila belum ada sesi atau sesi sudah tidak berlaku.
   Future<AppUser?> restoreSession();

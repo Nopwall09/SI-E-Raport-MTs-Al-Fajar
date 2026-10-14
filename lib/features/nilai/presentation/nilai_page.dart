@@ -20,7 +20,8 @@ class NilaiPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Nilai')),
-      body: statusAsync(daftar, () => ref.invalidate(penugasanSayaProvider)) ??
+      body:
+          statusAsync(daftar, () => ref.invalidate(penugasanSayaProvider)) ??
           RefreshIndicator(
             color: kBrand,
             onRefresh: () async {
@@ -82,9 +83,9 @@ class _KartuPenugasan extends StatelessWidget {
       borderRadius: BorderRadius.circular(kRadiusCard),
       child: InkWell(
         borderRadius: BorderRadius.circular(kRadiusCard),
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => InputNilaiPage(penugasan: p)),
-        ),
+        onTap: () => Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => InputNilaiPage(penugasan: p))),
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -115,11 +116,15 @@ class _KartuPenugasan extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(p.mapel,
-                        style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      p.mapel,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     const SizedBox(height: 2),
-                    Text('Kelas ${p.kelas}',
-                        style: Theme.of(context).textTheme.bodySmall),
+                    Text(
+                      'Kelas ${p.kelas}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ],
                 ),
               ),

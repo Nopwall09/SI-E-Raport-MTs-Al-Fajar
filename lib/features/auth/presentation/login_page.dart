@@ -37,10 +37,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       _error = null;
     });
     try {
-      await ref.read(authControllerProvider.notifier).login(
-            username: _username.text.trim(),
-            password: _password.text,
-          );
+      await ref
+          .read(authControllerProvider.notifier)
+          .login(username: _username.text.trim(), password: _password.text);
       // Berhasil: router otomatis memindahkan ke beranda sesuai role.
     } on AppException catch (e) {
       if (mounted) setState(() => _error = e.message);
@@ -67,27 +66,30 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    FadeSlideIn(child: Image.asset('assets/Logo.png', height: 88)),
+                    FadeSlideIn(
+                      child: Image.asset('assets/Logo.png', height: 88),
+                    ),
                     const SizedBox(height: 28),
                     FadeSlideIn(
                       index: 1,
                       child: Column(
                         children: [
-                    Text(
-                      'E-Rapor MTs Al-Fajar',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontSize: 26,
-                        color: kBrand,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Masuk dengan akun dari sekolah',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyMedium
-                          ?.copyWith(color: kMuted),
-                    ),
+                          Text(
+                            'E-Rapor MTs Al-Fajar',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              fontSize: 26,
+                              color: kBrand,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Masuk dengan akun dari sekolah',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: kMuted,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -97,78 +99,83 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                    TextFormField(
-                      controller: _username,
-                      enabled: !_submitting,
-                      textInputAction: TextInputAction.next,
-                      autofillHints: const [AutofillHints.username],
-                      autocorrect: false,
-                      decoration: const InputDecoration(
-                        labelText: 'Username',
-                        prefixIcon: Icon(Icons.person_outline),
-                      ),
-                      validator: (v) => (v == null || v.trim().isEmpty)
-                          ? 'Username wajib diisi'
-                          : null,
-                    ),
-                    const SizedBox(height: 14),
-                    TextFormField(
-                      controller: _password,
-                      enabled: !_submitting,
-                      obscureText: _obscure,
-                      textInputAction: TextInputAction.done,
-                      autofillHints: const [AutofillHints.password],
-                      onFieldSubmitted: (_) => _submit(),
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: IconButton(
-                          tooltip: _obscure
-                              ? 'Tampilkan password'
-                              : 'Sembunyikan password',
-                          icon: Icon(_obscure
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined),
-                          onPressed: () =>
-                              setState(() => _obscure = !_obscure),
-                        ),
-                      ),
-                      validator: (v) => (v == null || v.isEmpty)
-                          ? 'Password wajib diisi'
-                          : null,
-                    ),
-                    if (_error != null) ...[
-                      const SizedBox(height: 14),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.errorContainer,
-                          borderRadius:
-                              BorderRadius.circular(kRadiusControl),
-                        ),
-                        child: Text(
-                          _error!,
-                          style: TextStyle(
-                            color: theme.colorScheme.onErrorContainer,
+                          TextFormField(
+                            controller: _username,
+                            enabled: !_submitting,
+                            textInputAction: TextInputAction.next,
+                            autofillHints: const [AutofillHints.username],
+                            autocorrect: false,
+                            decoration: const InputDecoration(
+                              labelText: 'Username',
+                              prefixIcon: Icon(Icons.person_outline),
+                            ),
+                            validator: (v) => (v == null || v.trim().isEmpty)
+                                ? 'Username wajib diisi'
+                                : null,
                           ),
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 24),
-                    FilledButton(
-                      onPressed: _submitting ? null : _submit,
-                      child: _submitting
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
+                          const SizedBox(height: 14),
+                          TextFormField(
+                            controller: _password,
+                            enabled: !_submitting,
+                            obscureText: _obscure,
+                            textInputAction: TextInputAction.done,
+                            autofillHints: const [AutofillHints.password],
+                            onFieldSubmitted: (_) => _submit(),
+                            decoration: InputDecoration(
+                              labelText: 'Password',
+                              prefixIcon: const Icon(Icons.lock_outline),
+                              suffixIcon: IconButton(
+                                tooltip: _obscure
+                                    ? 'Tampilkan password'
+                                    : 'Sembunyikan password',
+                                icon: Icon(
+                                  _obscure
+                                      ? Icons.visibility_outlined
+                                      : Icons.visibility_off_outlined,
+                                ),
+                                onPressed: () =>
+                                    setState(() => _obscure = !_obscure),
                               ),
-                            )
-                          : const Text('Masuk'),
-                    ),
+                            ),
+                            validator: (v) => (v == null || v.isEmpty)
+                                ? 'Password wajib diisi'
+                                : null,
+                          ),
+                          if (_error != null) ...[
+                            const SizedBox(height: 14),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.errorContainer,
+                                borderRadius: BorderRadius.circular(
+                                  kRadiusControl,
+                                ),
+                              ),
+                              child: Text(
+                                _error!,
+                                style: TextStyle(
+                                  color: theme.colorScheme.onErrorContainer,
+                                ),
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 24),
+                          FilledButton(
+                            onPressed: _submitting ? null : _submit,
+                            child: _submitting
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text('Masuk'),
+                          ),
                         ],
                       ),
                     ),

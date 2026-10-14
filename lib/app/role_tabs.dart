@@ -35,20 +35,20 @@ class AppTab {
 }
 
 AppTab _beranda() => AppTab(
-      slug: 'beranda',
-      label: 'Beranda',
-      icon: Icons.home_outlined,
-      selectedIcon: Icons.home,
-      builder: () => const DashboardPage(),
-    );
+  slug: 'beranda',
+  label: 'Beranda',
+  icon: Icons.home_outlined,
+  selectedIcon: Icons.home,
+  builder: () => const DashboardPage(),
+);
 
 AppTab _profil() => AppTab(
-      slug: 'profil',
-      label: 'Profil',
-      icon: Icons.person_outline,
-      selectedIcon: Icons.person,
-      builder: () => const ProfilePage(),
-    );
+  slug: 'profil',
+  label: 'Profil',
+  icon: Icons.person_outline,
+  selectedIcon: Icons.person,
+  builder: () => const ProfilePage(),
+);
 
 AppTab _segera({
   required String slug,
@@ -57,41 +57,69 @@ AppTab _segera({
   required IconData selectedIcon,
   required int sprint,
   bool onlyWaliKelas = false,
-}) =>
-    AppTab(
-      slug: slug,
-      label: label,
-      icon: icon,
-      selectedIcon: selectedIcon,
-      onlyWaliKelas: onlyWaliKelas,
-      builder: () => PlaceholderPage(title: label, sprint: sprint),
-    );
+}) => AppTab(
+  slug: slug,
+  label: label,
+  icon: icon,
+  selectedIcon: selectedIcon,
+  onlyWaliKelas: onlyWaliKelas,
+  builder: () => PlaceholderPage(title: label, sprint: sprint),
+);
 
-AppTab _admin(String slug, String label, IconData icon, IconData selectedIcon,
-        Widget Function() builder) =>
-    AppTab(
-      slug: slug,
-      label: label,
-      icon: icon,
-      selectedIcon: selectedIcon,
-      builder: builder,
-    );
+AppTab _admin(
+  String slug,
+  String label,
+  IconData icon,
+  IconData selectedIcon,
+  Widget Function() builder,
+) => AppTab(
+  slug: slug,
+  label: label,
+  icon: icon,
+  selectedIcon: selectedIcon,
+  builder: builder,
+);
 
 /// Daftar tab per role.
 List<AppTab> tabsFor(UserRole role) {
   switch (role) {
     case UserRole.admin:
       return [
-        _admin('beranda', 'Beranda', Icons.home_outlined, Icons.home,
-            () => const AdminDashboardScreen()),
-        _admin('siswa', 'Siswa', Icons.school_outlined, Icons.school,
-            () => const AdminDataSiswaScreen()),
-        _admin('guru', 'Guru', Icons.badge_outlined, Icons.badge,
-            () => const AdminDataGuruScreen()),
-        _admin('kelas', 'Kelas', Icons.meeting_room_outlined,
-            Icons.meeting_room, () => const AdminDataKelasScreen()),
-        _admin('pengguna', 'Pengguna', Icons.manage_accounts_outlined,
-            Icons.manage_accounts, () => const AdminPenggunaScreen()),
+        _admin(
+          'beranda',
+          'Beranda',
+          Icons.home_outlined,
+          Icons.home,
+          () => const AdminDashboardScreen(),
+        ),
+        _admin(
+          'siswa',
+          'Siswa',
+          Icons.school_outlined,
+          Icons.school,
+          () => const AdminDataSiswaScreen(),
+        ),
+        _admin(
+          'guru',
+          'Guru',
+          Icons.badge_outlined,
+          Icons.badge,
+          () => const AdminDataGuruScreen(),
+        ),
+        _admin(
+          'kelas',
+          'Kelas',
+          Icons.meeting_room_outlined,
+          Icons.meeting_room,
+          () => const AdminDataKelasScreen(),
+        ),
+        _admin(
+          'pengguna',
+          'Pengguna',
+          Icons.manage_accounts_outlined,
+          Icons.manage_accounts,
+          () => const AdminPenggunaScreen(),
+        ),
         _profil(),
       ];
     case UserRole.guru:

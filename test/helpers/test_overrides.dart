@@ -15,8 +15,10 @@ List<Override> testOverrides({String? signedInAs}) {
       FakeAuthRepository(latency: Duration.zero, signedInAs: signedInAs),
     ),
     tahunAjaranAktifProvider.overrideWith(
-        (ref) async => const TahunAjaranAktif(1, '2026/2027', 'ganjil')),
-    progresPenugasanProvider
-        .overrideWith((ref) async => const <PenugasanProgres>[]),
+      (ref) async => const TahunAjaranAktif(1, '2026/2027', 'ganjil'),
+    ),
+    progresPenugasanProvider.overrideWith(
+      (ref) async => const <PenugasanProgres>[],
+    ),
   ];
 }

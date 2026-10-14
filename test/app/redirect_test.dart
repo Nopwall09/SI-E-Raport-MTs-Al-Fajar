@@ -28,13 +28,24 @@ void main() {
   });
 
   test('area role lain ditolak', () {
-    expect(redirectFor(const AsyncData(_guru), '/siswa/rapor'), '/guru/beranda');
-    expect(redirectFor(const AsyncData(_guru), '/admin/beranda'), '/guru/beranda');
+    expect(
+      redirectFor(const AsyncData(_guru), '/siswa/rapor'),
+      '/guru/beranda',
+    );
+    expect(
+      redirectFor(const AsyncData(_guru), '/admin/beranda'),
+      '/guru/beranda',
+    );
   });
 
   test('tab wali kelas hanya untuk wali kelas', () {
-    expect(redirectFor(const AsyncData(_guru), '/guru/wali-kelas'),
-        '/guru/beranda');
-    expect(redirectFor(const AsyncData(_waliKelas), '/guru/wali-kelas'), isNull);
+    expect(
+      redirectFor(const AsyncData(_guru), '/guru/wali-kelas'),
+      '/guru/beranda',
+    );
+    expect(
+      redirectFor(const AsyncData(_waliKelas), '/guru/wali-kelas'),
+      isNull,
+    );
   });
 }

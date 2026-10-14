@@ -22,8 +22,7 @@ class AuthController extends AsyncNotifier<AppUser?> {
   @override
   Future<AppUser?> build() {
     final repository = ref.read(authRepositoryProvider);
-    final subscription =
-        repository.onSignedOut.listen((_) => _onSignedOut());
+    final subscription = repository.onSignedOut.listen((_) => _onSignedOut());
     ref.onDispose(subscription.cancel);
     return repository.restoreSession();
   }
@@ -51,5 +50,6 @@ class AuthController extends AsyncNotifier<AppUser?> {
   }
 }
 
-final authControllerProvider =
-    AsyncNotifierProvider<AuthController, AppUser?>(AuthController.new);
+final authControllerProvider = AsyncNotifierProvider<AuthController, AppUser?>(
+  AuthController.new,
+);

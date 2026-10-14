@@ -56,8 +56,11 @@ void main() {
           .read(authControllerProvider.notifier)
           .login(username: 'tidak-ada', password: 'x'),
       throwsA(
-        isA<AppException>()
-            .having((e) => e.type, 'type', AppErrorType.unauthorized),
+        isA<AppException>().having(
+          (e) => e.type,
+          'type',
+          AppErrorType.unauthorized,
+        ),
       ),
     );
     expect(container.read(authControllerProvider).value, isNull);

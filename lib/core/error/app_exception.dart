@@ -85,7 +85,10 @@ class AppException implements Exception {
       409 => AppErrorType.conflict,
       _ => AppErrorType.server,
     };
-    return AppException(type, pesan ?? 'Server sedang bermasalah. Coba lagi nanti.');
+    return AppException(
+      type,
+      pesan ?? 'Server sedang bermasalah. Coba lagi nanti.',
+    );
   }
 
   static AppException _fromPostgrest(PostgrestException error) {
@@ -103,10 +106,7 @@ class AppException implements Exception {
       case 'P0001':
         return AppException(AppErrorType.conflict, error.message);
       case '23505':
-        return const AppException(
-          AppErrorType.conflict,
-          'Data ini sudah ada.',
-        );
+        return const AppException(AppErrorType.conflict, 'Data ini sudah ada.');
       case '23514':
         return const AppException(
           AppErrorType.validation,

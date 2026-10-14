@@ -25,10 +25,8 @@ class _InputNilaiPageState extends ConsumerState<InputNilaiPage> {
   final _awal = <int, String>{};
   bool _menyimpan = false;
 
-  KelasMapel get _kunci => (
-        kelasId: widget.penugasan.kelasId,
-        mapelId: widget.penugasan.mapelId,
-      );
+  KelasMapel get _kunci =>
+      (kelasId: widget.penugasan.kelasId, mapelId: widget.penugasan.mapelId);
 
   @override
   void dispose() {
@@ -55,8 +53,9 @@ class _InputNilaiPageState extends ConsumerState<InputNilaiPage> {
       if (t.isNotEmpty && t != _awal[id]) berubah[id] = num.parse(t);
     });
     if (berubah.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Tidak ada perubahan')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Tidak ada perubahan')));
       return;
     }
     final ta = await ref.read(tahunAjaranAktifProvider.future);
@@ -64,7 +63,9 @@ class _InputNilaiPageState extends ConsumerState<InputNilaiPage> {
     setState(() => _menyimpan = true);
     final ok = await simpan(
       context,
-      () => ref.read(nilaiRepositoryProvider).simpan(
+      () => ref
+          .read(nilaiRepositoryProvider)
+          .simpan(
             mapelId: widget.penugasan.mapelId,
             semester: ta.semester,
             nilaiPerKelasSiswa: berubah,
@@ -88,7 +89,8 @@ class _InputNilaiPageState extends ConsumerState<InputNilaiPage> {
 
     return Scaffold(
       appBar: AppBar(title: Text('${p.mapel}, ${p.kelas}')),
-      body: statusAsync(data, () => ref.invalidate(siswaNilaiProvider(_kunci))) ??
+      body:
+          statusAsync(data, () => ref.invalidate(siswaNilaiProvider(_kunci))) ??
           Form(
             key: _formKey,
             child: ListView.separated(
@@ -110,10 +112,14 @@ class _InputNilaiPageState extends ConsumerState<InputNilaiPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(s.nama,
-                                style: Theme.of(context).textTheme.titleSmall),
-                            Text('NIS ${s.nis}',
-                                style: Theme.of(context).textTheme.bodySmall),
+                            Text(
+                              s.nama,
+                              style: Theme.of(context).textTheme.titleSmall,
+                            ),
+                            Text(
+                              'NIS ${s.nis}',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
                           ],
                         ),
                       ),
@@ -124,10 +130,12 @@ class _InputNilaiPageState extends ConsumerState<InputNilaiPage> {
                           enabled: !_menyimpan,
                           textAlign: TextAlign.center,
                           keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true),
+                            decimal: true,
+                          ),
                           inputFormatters: [
                             FilteringTextInputFormatter.allow(
-                                RegExp(r'[0-9.,]')),
+                              RegExp(r'[0-9.,]'),
+                            ),
                           ],
                           decoration: const InputDecoration(
                             hintText: '0-100',
@@ -157,7 +165,9 @@ class _InputNilaiPageState extends ConsumerState<InputNilaiPage> {
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white),
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
                     )
                   : const Icon(Icons.save_outlined),
               label: const Text('Simpan'),

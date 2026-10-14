@@ -49,8 +49,10 @@ class NilaiRepository {
   Future<List<Penugasan>> penugasanSaya(int tahunAjaranId) async {
     final rows = await _db
         .from('penugasan_mengajar')
-        .select('kelas_id,mapel_id,kelas!inner(nama,tahun_ajaran_id),'
-            'mapel(nama),guru!inner(user_id)')
+        .select(
+          'kelas_id,mapel_id,kelas!inner(nama,tahun_ajaran_id),'
+          'mapel(nama),guru!inner(user_id)',
+        )
         .eq('kelas.tahun_ajaran_id', tahunAjaranId)
         // Wali kelas juga bisa membaca penugasan guru lain di kelasnya.
         .eq('guru.user_id', _db.auth.currentUser!.id);
@@ -83,11 +85,11 @@ class NilaiRepository {
     final nilai = ids.isEmpty
         ? const []
         : await _db
-            .from('detnilai')
-            .select('kelas_siswa_id,nilai')
-            .eq('mapel_id', mapelId)
-            .eq('semester', semester)
-            .inFilter('kelas_siswa_id', ids);
+              .from('detnilai')
+              .select('kelas_siswa_id,nilai')
+              .eq('mapel_id', mapelId)
+              .eq('semester', semester)
+              .inFilter('kelas_siswa_id', ids);
     final peta = {
       for (final n in nilai) n['kelas_siswa_id'] as int: n['nilai'] as num,
     };
@@ -111,18 +113,15 @@ class NilaiRepository {
     required Map<int, num> nilaiPerKelasSiswa,
   }) async {
     if (nilaiPerKelasSiswa.isEmpty) return;
-    await _db.from('detnilai').upsert(
-      [
-        for (final e in nilaiPerKelasSiswa.entries)
-          {
-            'kelas_siswa_id': e.key,
-            'mapel_id': mapelId,
-            'semester': semester,
-            'nilai': e.value,
-          },
-      ],
-      onConflict: 'kelas_siswa_id,mapel_id,semester',
-    );
+    await _db.from('detnilai').upsert([
+      for (final e in nilaiPerKelasSiswa.entries)
+        {
+          'kelas_siswa_id': e.key,
+          'mapel_id': mapelId,
+          'semester': semester,
+          'nilai': e.value,
+        },
+    ], onConflict: 'kelas_siswa_id,mapel_id,semester');
   }
 
   /// Progres input per penugasan. Jumlah siswa dan nilai dihitung di sisi
@@ -146,7 +145,11 @@ class NilaiRepository {
     final penugasan = hasil[0] as List<Penugasan>;
     final siswaPerKelas = <int, int>{};
     for (final r in hasil[1] as List) {
-      siswaPerKelas.update(r['kelas_id'] as int, (n) => n + 1, ifAbsent: () => 1);
+      siswaPerKelas.update(
+        r['kelas_id'] as int,
+        (n) => n + 1,
+        ifAbsent: () => 1,
+      );
     }
     final nilaiPerKelasMapel = <(int, int), int>{};
     for (final r in hasil[2] as List) {

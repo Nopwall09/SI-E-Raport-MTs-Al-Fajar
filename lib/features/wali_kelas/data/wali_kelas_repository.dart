@@ -8,7 +8,11 @@ class MapelStatus {
 }
 
 class SiswaProgres {
-  const SiswaProgres({required this.nama, required this.nis, required this.mapel});
+  const SiswaProgres({
+    required this.nama,
+    required this.nis,
+    required this.mapel,
+  });
 
   final String nama;
   final String nis;
@@ -44,16 +48,19 @@ class WaliKelasRepository {
     final nilai = ids.isEmpty
         ? const []
         : await _db
-            .from('detnilai')
-            .select('kelas_siswa_id,mapel_id,nilai')
-            .eq('semester', semester)
-            .inFilter('kelas_siswa_id', ids);
+              .from('detnilai')
+              .select('kelas_siswa_id,mapel_id,nilai')
+              .eq('semester', semester)
+              .inFilter('kelas_siswa_id', ids);
     final peta = {
       for (final n in nilai)
         (n['kelas_siswa_id'] as int, n['mapel_id'] as int): n['nilai'] as num,
     };
-    penugasan.sort((a, b) =>
-        (a['mapel']['nama'] as String).compareTo(b['mapel']['nama'] as String));
+    penugasan.sort(
+      (a, b) => (a['mapel']['nama'] as String).compareTo(
+        b['mapel']['nama'] as String,
+      ),
+    );
 
     final daftar = [
       for (final s in siswa)

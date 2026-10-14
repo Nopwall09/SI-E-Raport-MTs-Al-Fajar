@@ -27,7 +27,10 @@ class FadeSlideIn extends StatelessWidget {
       curve: Interval(delay / total, 1, curve: Curves.easeOutCubic),
       builder: (context, v, child) => Opacity(
         opacity: v,
-        child: Transform.translate(offset: Offset(0, 16 * (1 - v)), child: child),
+        child: Transform.translate(
+          offset: Offset(0, 16 * (1 - v)),
+          child: child,
+        ),
       ),
       child: child,
     );
@@ -122,7 +125,9 @@ class _ListSkeletonState extends State<ListSkeleton>
       itemBuilder: (context, i) => AnimatedBuilder(
         animation: _c,
         builder: (context, child) => Opacity(
-          opacity: diam ? 0.7 : 0.45 + 0.4 * Curves.easeInOut.transform(_c.value),
+          opacity: diam
+              ? 0.7
+              : 0.45 + 0.4 * Curves.easeInOut.transform(_c.value),
           child: child,
         ),
         child: Container(

@@ -20,7 +20,8 @@ class DashboardPage extends ConsumerWidget {
             Text('Halo, ${user.name}', style: theme.textTheme.headlineSmall),
             const SizedBox(height: 4),
             Text(user.role.label),
-            if (user.isWaliKelas) Text('Wali kelas ${user.waliKelas!.namaKelas}'),
+            if (user.isWaliKelas)
+              Text('Wali kelas ${user.waliKelas!.namaKelas}'),
           ],
           const SizedBox(height: 24),
           const Text(

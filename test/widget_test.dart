@@ -12,9 +12,13 @@ Future<void> _login(WidgetTester tester, String username) async {
   await tester.pumpAndSettle();
 
   await tester.enterText(
-      find.widgetWithText(TextFormField, 'Username'), username);
+    find.widgetWithText(TextFormField, 'Username'),
+    username,
+  );
   await tester.enterText(
-      find.widgetWithText(TextFormField, 'Password'), 'rahasia');
+    find.widgetWithText(TextFormField, 'Password'),
+    'rahasia',
+  );
   await tester.tap(find.widgetWithText(FilledButton, 'Masuk'));
   await tester.pumpAndSettle();
 }
@@ -29,8 +33,9 @@ void main() {
     expect(find.widgetWithText(FilledButton, 'Masuk'), findsOneWidget);
   });
 
-  testWidgets('guru biasa masuk ke beranda tanpa tab wali kelas',
-      (tester) async {
+  testWidgets('guru biasa masuk ke beranda tanpa tab wali kelas', (
+    tester,
+  ) async {
     await _login(tester, 'guru');
 
     expect(find.text('Halo, Guru Contoh'), findsOneWidget);
@@ -45,17 +50,19 @@ void main() {
     expect(find.text('Wali kelas'), findsWidgets);
   });
 
-  testWidgets('password salah menampilkan pesan dan tetap di login',
-      (tester) async {
+  testWidgets('password salah menampilkan pesan dan tetap di login', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(overrides: testOverrides(), child: const EraporApp()),
     );
     await tester.pumpAndSettle();
 
     await tester.enterText(
-        find.widgetWithText(TextFormField, 'Username'), 'tidak-ada');
-    await tester.enterText(
-        find.widgetWithText(TextFormField, 'Password'), 'x');
+      find.widgetWithText(TextFormField, 'Username'),
+      'tidak-ada',
+    );
+    await tester.enterText(find.widgetWithText(TextFormField, 'Password'), 'x');
     await tester.tap(find.widgetWithText(FilledButton, 'Masuk'));
     await tester.pumpAndSettle();
 
