@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'wali/wali_rapor_screen.dart';
 import 'admin/admin_dashboard_screen.dart';
 import 'admin/admin_pengguna_screen.dart';
+import 'admin/admin_data_siswa_screen.dart';
 
 enum AppViewMode {
   waliRapor,
   adminDashboard,
+  adminDataSiswa,
   adminPengguna,
 }
 
@@ -117,6 +119,18 @@ class _MainShellScreenState extends State<MainShellScreen> {
                 },
               ),
 
+              // Wireframe: Data Siswa
+              _buildDrawerItem(
+                icon: Icons.badge_outlined,
+                title: 'Data Siswa',
+                subtitle: 'Wireframe: Admin - Data Siswa',
+                isSelected: _currentView == AppViewMode.adminDataSiswa,
+                onTap: () {
+                  setState(() => _currentView = AppViewMode.adminDataSiswa);
+                  Navigator.pop(context);
+                },
+              ),
+
               // Wireframe 3
               _buildDrawerItem(
                 icon: Icons.people_outline,
@@ -180,6 +194,10 @@ class _MainShellScreenState extends State<MainShellScreen> {
         );
       case AppViewMode.adminDashboard:
         return AdminDashboardScreen(
+          onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
+        );
+      case AppViewMode.adminDataSiswa:
+        return AdminDataSiswaScreen(
           onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
         );
       case AppViewMode.adminPengguna:
