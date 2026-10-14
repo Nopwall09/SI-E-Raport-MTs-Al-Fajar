@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../app/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../widgets/motion.dart';
 import '../../features/admin/presentation/admin_providers.dart';
 import '../../features/admin/presentation/admin_widgets.dart';
 import '../../models/user_model.dart';
@@ -40,18 +42,14 @@ class _AdminPenggunaScreenState extends ConsumerState<AdminPenggunaScreen> {
   Widget build(BuildContext context) {
     final lista = ref.watch(adminPenggunaProvider);
     _users = lista.valueOrNull ?? const [];
-    const brandColor = Color(0xFF0D5C3A);
+    const brandColor = kBrand;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAF9),
       appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        scrolledUnderElevation: 1,
         title: const Text(
           'Pengguna',
           style: TextStyle(
-            color: Color(0xFF1E293B),
+            color: kText,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -70,9 +68,9 @@ class _AdminPenggunaScreenState extends ConsumerState<AdminPenggunaScreen> {
                   // Search Input
                   Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.grey.shade300),
+                      color: kField,
+                      borderRadius: BorderRadius.circular(kRadiusControl),
+                      border: Border.all(color: kBorder),
                     ),
                     child: TextField(
                       controller: _searchController,
@@ -80,7 +78,7 @@ class _AdminPenggunaScreenState extends ConsumerState<AdminPenggunaScreen> {
                       decoration: InputDecoration(
                         hintText: 'Cari...',
                         hintStyle: TextStyle(
-                          color: Colors.grey.shade500,
+                          color: kMuted,
                           fontSize: 14,
                         ),
                         prefixIcon: const Icon(Icons.search, size: 20),
@@ -94,6 +92,9 @@ class _AdminPenggunaScreenState extends ConsumerState<AdminPenggunaScreen> {
                               )
                             : null,
                         border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        filled: false,
                         contentPadding: const EdgeInsets.symmetric(
                           vertical: 12,
                           horizontal: 12,
@@ -136,42 +137,49 @@ class _AdminPenggunaScreenState extends ConsumerState<AdminPenggunaScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.search_off,
-                              size: 48, color: Colors.grey.shade400),
+                              size: 48, color: kMuted),
                           const SizedBox(height: 8),
                           Text(
                             'Pengguna tidak ditemukan',
                             style: TextStyle(
-                              color: Colors.grey.shade600,
+                              color: kMuted,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
                       ),
                     )
-                  : ListView.separated(
-                      padding: const EdgeInsets.all(16),
+                  : RefreshIndicator(
+                      color: kBrand,
+                      onRefresh: () async {
+                        ref.invalidate(adminPenggunaProvider);
+                        try {
+                          await ref.read(adminPenggunaProvider.future);
+                        } catch (_) {}
+                      },
+                      child: ListView.separated(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
                       itemCount: _filteredUsers.length,
                       separatorBuilder: (context, index) =>
                           const SizedBox(height: 10),
                       itemBuilder: (context, index) {
                         final user = _filteredUsers[index];
-                        return _buildUserCard(user);
+                        return FadeSlideIn(
+                          index: index,
+                          child: PressScale(child: _buildUserCard(user)),
+                        );
                       },
+                    ),
                     ),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFFE2E8F0),
-        foregroundColor: const Color(0xFF0F172A),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(50),
-          side: const BorderSide(color: Color(0xFF334155), width: 1.5),
-        ),
-        elevation: 2,
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddUserSheet(context),
-        child: const Icon(Icons.add, size: 28),
+        icon: const Icon(Icons.add),
+        label: const Text('Tambah'),
       ),
     );
   }
@@ -180,15 +188,15 @@ class _AdminPenggunaScreenState extends ConsumerState<AdminPenggunaScreen> {
     final isSelected = _filterRole == role;
     return InkWell(
       onTap: () => setState(() => _filterRole = role),
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(999),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? brandColor : const Color(0xFFF1F5F9),
-          borderRadius: BorderRadius.circular(20),
+          color: isSelected ? brandColor : kField,
+          borderRadius: BorderRadius.circular(999),
           border: Border.all(
-            color: isSelected ? brandColor : Colors.grey.shade300,
+            color: isSelected ? brandColor : kBorder,
           ),
         ),
         child: Text(
@@ -196,7 +204,7 @@ class _AdminPenggunaScreenState extends ConsumerState<AdminPenggunaScreen> {
           style: TextStyle(
             fontSize: 12,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            color: isSelected ? Colors.white : Colors.grey.shade700,
+            color: isSelected ? Colors.white : kMuted,
           ),
         ),
       ),
@@ -208,48 +216,24 @@ class _AdminPenggunaScreenState extends ConsumerState<AdminPenggunaScreen> {
     Color badgeText;
     Color avatarBg;
 
-    switch (user.role) {
-      case UserRole.admin:
-        badgeBg = const Color(0xFFE0E7FF);
-        badgeText = const Color(0xFF3730A3);
-        avatarBg = const Color(0xFF4F46E5);
-        break;
-      case UserRole.guru:
-        badgeBg = const Color(0xFFDCFCE7);
-        badgeText = const Color(0xFF166534);
-        avatarBg = const Color(0xFF16A34A);
-        break;
-      case UserRole.waliMurid:
-        badgeBg = const Color(0xFFFEF3C7);
-        badgeText = const Color(0xFF92400E);
-        avatarBg = const Color(0xFFD97706);
-        break;
-      case UserRole.siswa:
-        badgeBg = const Color(0xFFF1F5F9);
-        badgeText = const Color(0xFF475569);
-        avatarBg = const Color(0xFF64748B);
-        break;
-    }
+    // Role dibedakan lewat label, bukan warna: satu aksen untuk seluruh app.
+    badgeBg = kBrandSoft;
+    badgeText = kBrand;
+    avatarBg = kBrand;
 
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300, width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(kRadiusCard),
+        border: Border.all(color: kBorder),
+        boxShadow: kCardShadow,
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 20,
-            backgroundColor: avatarBg.withOpacity(0.12),
+            backgroundColor: avatarBg.withValues(alpha: 0.12),
             child: Text(
               user.nama.isNotEmpty ? user.nama[0] : 'U',
               style: TextStyle(
@@ -269,7 +253,7 @@ class _AdminPenggunaScreenState extends ConsumerState<AdminPenggunaScreen> {
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E293B),
+                    color: kText,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -277,7 +261,7 @@ class _AdminPenggunaScreenState extends ConsumerState<AdminPenggunaScreen> {
                   user.email,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey.shade600,
+                    color: kMuted,
                   ),
                 ),
               ],
@@ -289,7 +273,7 @@ class _AdminPenggunaScreenState extends ConsumerState<AdminPenggunaScreen> {
             decoration: BoxDecoration(
               color: badgeBg,
               borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: badgeText.withOpacity(0.3)),
+              border: Border.all(color: badgeText.withValues(alpha: 0.3)),
             ),
             child: Text(
               user.role.label,
@@ -315,9 +299,6 @@ class _AdminPenggunaScreenState extends ConsumerState<AdminPenggunaScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) => Padding(
           padding: EdgeInsets.only(
@@ -352,9 +333,6 @@ class _AdminPenggunaScreenState extends ConsumerState<AdminPenggunaScreen> {
                 decoration: InputDecoration(
                   labelText: 'Nama Lengkap',
                   hintText: 'Contoh: Ahmad Dahlan, S.Pd',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -364,9 +342,6 @@ class _AdminPenggunaScreenState extends ConsumerState<AdminPenggunaScreen> {
                 decoration: InputDecoration(
                   labelText: 'Username login',
                   hintText: 'huruf kecil, mis. ahmad.fauzi',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -376,19 +351,13 @@ class _AdminPenggunaScreenState extends ConsumerState<AdminPenggunaScreen> {
                 decoration: InputDecoration(
                   labelText: 'Password awal',
                   hintText: 'minimal 8 karakter',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
                 ),
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<UserRole>(
-                value: selectedRole,
+                initialValue: selectedRole,
                 decoration: InputDecoration(
                   labelText: 'Role',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
                 ),
                 items: UserRole.values.where((r) => r != UserRole.siswa).map((role) {
                   return DropdownMenuItem(
@@ -405,11 +374,11 @@ class _AdminPenggunaScreenState extends ConsumerState<AdminPenggunaScreen> {
               const SizedBox(height: 20),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0D5C3A),
+                  backgroundColor: kBrand,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(kRadiusControl),
                   ),
                 ),
                 onPressed: () async {

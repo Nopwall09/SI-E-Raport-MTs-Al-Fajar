@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../app/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../widgets/motion.dart';
 import '../../features/admin/presentation/admin_providers.dart';
 import '../../features/admin/presentation/admin_widgets.dart';
 import '../../models/guru_model.dart';
@@ -39,18 +41,14 @@ class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
   Widget build(BuildContext context) {
     final lista = ref.watch(adminGuruProvider);
     _daftarGuru = lista.valueOrNull ?? const [];
-    const brandColor = Color(0xFF0D5C3A);
+    const brandColor = kBrand;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAF9),
       appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        scrolledUnderElevation: 1,
         title: const Text(
           'Data Guru',
           style: TextStyle(
-            color: Color(0xFF1E293B),
+            color: kText,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -66,9 +64,9 @@ class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.grey.shade300),
+                  color: kField,
+                  borderRadius: BorderRadius.circular(kRadiusControl),
+                  border: Border.all(color: kBorder),
                 ),
                 child: TextField(
                   controller: _searchController,
@@ -76,7 +74,7 @@ class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
                   decoration: InputDecoration(
                     hintText: 'Cari...',
                     hintStyle: TextStyle(
-                      color: Colors.grey.shade500,
+                      color: kMuted,
                       fontSize: 14,
                     ),
                     prefixIcon: const Icon(Icons.search, size: 20),
@@ -90,6 +88,9 @@ class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
                           )
                         : null,
                     border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        filled: false,
                     contentPadding: const EdgeInsets.symmetric(
                       vertical: 12,
                       horizontal: 12,
@@ -109,42 +110,49 @@ class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.person_off_outlined,
-                              size: 48, color: Colors.grey.shade400),
+                              size: 48, color: kMuted),
                           const SizedBox(height: 8),
                           Text(
                             'Guru tidak ditemukan',
                             style: TextStyle(
-                              color: Colors.grey.shade600,
+                              color: kMuted,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
                       ),
                     )
-                  : ListView.separated(
-                      padding: const EdgeInsets.all(16),
+                  : RefreshIndicator(
+                      color: kBrand,
+                      onRefresh: () async {
+                        ref.invalidate(adminGuruProvider);
+                        try {
+                          await ref.read(adminGuruProvider.future);
+                        } catch (_) {}
+                      },
+                      child: ListView.separated(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
                       itemCount: _filteredGuru.length,
                       separatorBuilder: (context, index) =>
                           const SizedBox(height: 10),
                       itemBuilder: (context, index) {
                         final guru = _filteredGuru[index];
-                        return _buildGuruCard(guru, brandColor);
+                        return FadeSlideIn(
+                          index: index,
+                          child: PressScale(child: _buildGuruCard(guru, brandColor)),
+                        );
                       },
+                    ),
                     ),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFFE2E8F0),
-        foregroundColor: const Color(0xFF0F172A),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(50),
-          side: const BorderSide(color: Color(0xFF334155), width: 1.5),
-        ),
-        elevation: 2,
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddGuruSheet(context),
-        child: const Icon(Icons.add, size: 28),
+        icon: const Icon(Icons.add),
+        label: const Text('Tambah'),
       ),
     );
   }
@@ -153,20 +161,14 @@ class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300, width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(kRadiusCard),
+        border: Border.all(color: kBorder),
+        boxShadow: kCardShadow,
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(kRadiusCard),
           onTap: () => _showGuruDetailSheet(context, guru, brandColor),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -174,11 +176,11 @@ class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
               children: [
                 CircleAvatar(
                   radius: 20,
-                  backgroundColor: const Color(0xFF2563EB).withOpacity(0.1),
+                  backgroundColor: kBrand.withValues(alpha: 0.1),
                   child: Text(
                     guru.nama.isNotEmpty ? guru.nama[0] : 'G',
                     style: const TextStyle(
-                      color: Color(0xFF2563EB),
+                      color: kBrand,
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
@@ -194,15 +196,15 @@ class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1E293B),
+                          color: kText,
                         ),
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        'NIP ${guru.nip} · Mapel ${guru.mapel}',
+                        'NIP ${guru.nip}\nMapel ${guru.mapel}',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey.shade600,
+                          color: kMuted,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -212,7 +214,7 @@ class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
                 Icon(
                   Icons.chevron_right,
                   size: 20,
-                  color: Colors.grey.shade400,
+                  color: kMuted,
                 ),
               ],
             ),
@@ -227,9 +229,6 @@ class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -244,7 +243,7 @@ class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E293B),
+                    color: kText,
                   ),
                 ),
                 IconButton(
@@ -258,11 +257,11 @@ class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
               contentPadding: EdgeInsets.zero,
               leading: CircleAvatar(
                 radius: 26,
-                backgroundColor: const Color(0xFF2563EB).withOpacity(0.12),
+                backgroundColor: kBrand.withValues(alpha: 0.12),
                 child: Text(
                   guru.nama[0],
                   style: const TextStyle(
-                    color: Color(0xFF2563EB),
+                    color: kBrand,
                     fontWeight: FontWeight.bold,
                     fontSize: 22,
                   ),
@@ -291,7 +290,7 @@ class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(kRadiusControl),
                 ),
               ),
               onPressed: () {
@@ -319,14 +318,14 @@ class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
         children: [
           Text(
             label,
-            style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+            style: TextStyle(fontSize: 13, color: kMuted),
           ),
           Text(
             value,
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF1E293B),
+              color: kText,
             ),
           ),
         ],
@@ -345,9 +344,6 @@ class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (ctx) => Padding(
         padding: EdgeInsets.only(
           top: 20,
@@ -381,9 +377,6 @@ class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
               decoration: InputDecoration(
                 labelText: 'Nama Lengkap & Gelar',
                 hintText: 'Contoh: Ust. Ahmad Fauzi, S.Pd.I',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
               ),
             ),
             const SizedBox(height: 10),
@@ -393,9 +386,6 @@ class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
               decoration: InputDecoration(
                 labelText: 'NIP / NUPTK',
                 hintText: '18 digit nomor',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
               ),
             ),
             const SizedBox(height: 10),
@@ -405,9 +395,6 @@ class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
               decoration: InputDecoration(
                 labelText: 'No. HP (opsional)',
                 hintText: '08xxxxxxxxxx',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
               ),
             ),
             const SizedBox(height: 10),
@@ -417,9 +404,6 @@ class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
               decoration: InputDecoration(
                 labelText: 'Username login',
                 hintText: 'huruf kecil, mis. ahmad.fauzi',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
               ),
             ),
             const SizedBox(height: 10),
@@ -429,19 +413,16 @@ class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
               decoration: InputDecoration(
                 labelText: 'Password awal',
                 hintText: 'minimal 8 karakter',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
               ),
             ),
             const SizedBox(height: 18),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0D5C3A),
+                backgroundColor: kBrand,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(kRadiusControl),
                 ),
               ),
               onPressed: () async {

@@ -2,8 +2,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/theme.dart';
 import '../../../core/config/env.dart';
 import '../../../core/error/app_exception.dart';
+import '../../../widgets/motion.dart';
 import 'auth_controller.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -52,10 +54,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final theme = Theme.of(context);
 
     return Scaffold(
+      // Putih, karena Logo.png berlatar putih (bukan transparan).
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 400),
               child: Form(
@@ -63,34 +67,51 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Image.asset('assets/Logo.png',
-                        height: 120, fit: BoxFit.contain),
-                    const SizedBox(height: 24),
-                    Text('Sistem Informasi Akademik',
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.titleLarge),
-                    Text('E-Rapor MTs Al-Fajar',
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.primary,
-                        )),
-                    const SizedBox(height: 40),
+                    FadeSlideIn(child: Image.asset('assets/Logo.png', height: 88)),
+                    const SizedBox(height: 28),
+                    FadeSlideIn(
+                      index: 1,
+                      child: Column(
+                        children: [
+                    Text(
+                      'E-Rapor MTs Al-Fajar',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontSize: 26,
+                        color: kBrand,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Masuk dengan akun dari sekolah',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium
+                          ?.copyWith(color: kMuted),
+                    ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 36),
+                    FadeSlideIn(
+                      index: 2,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
                     TextFormField(
                       controller: _username,
                       enabled: !_submitting,
                       textInputAction: TextInputAction.next,
                       autofillHints: const [AutofillHints.username],
+                      autocorrect: false,
                       decoration: const InputDecoration(
                         labelText: 'Username',
                         prefixIcon: Icon(Icons.person_outline),
-                        border: OutlineInputBorder(),
                       ),
                       validator: (v) => (v == null || v.trim().isEmpty)
                           ? 'Username wajib diisi'
                           : null,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
                     TextFormField(
                       controller: _password,
                       enabled: !_submitting,
@@ -101,7 +122,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       decoration: InputDecoration(
                         labelText: 'Password',
                         prefixIcon: const Icon(Icons.lock_outline),
-                        border: const OutlineInputBorder(),
                         suffixIcon: IconButton(
                           tooltip: _obscure
                               ? 'Tampilkan password'
@@ -118,28 +138,41 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           : null,
                     ),
                     if (_error != null) ...[
-                      const SizedBox(height: 16),
-                      Text(
-                        _error!,
-                        style: TextStyle(color: theme.colorScheme.error),
+                      const SizedBox(height: 14),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.errorContainer,
+                          borderRadius:
+                              BorderRadius.circular(kRadiusControl),
+                        ),
+                        child: Text(
+                          _error!,
+                          style: TextStyle(
+                            color: theme.colorScheme.onErrorContainer,
+                          ),
+                        ),
                       ),
                     ],
                     const SizedBox(height: 24),
                     FilledButton(
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
                       onPressed: _submitting ? null : _submit,
                       child: _submitting
                           ? const SizedBox(
                               height: 20,
                               width: 20,
-                              child:
-                                  CircularProgressIndicator(strokeWidth: 2),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             )
                           : const Text('Masuk'),
                     ),
-                    const SizedBox(height: 16),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
                     Text(
                       'Lupa password? Hubungi Admin TU.',
                       style: theme.textTheme.bodySmall,

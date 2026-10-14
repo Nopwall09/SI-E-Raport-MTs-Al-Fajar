@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/error/app_exception.dart';
 import '../../../core/widgets/error_view.dart';
+import '../../../widgets/motion.dart';
 
 /// Spinner saat pertama memuat, pesan error bila gagal tanpa data lama,
 /// selain itu null (tampilkan isi). Data lama tetap tampil saat refresh.
@@ -16,7 +17,7 @@ Widget? statusAsync(AsyncValue<Object?> v, VoidCallback ulangi) {
       ),
     );
   }
-  return const Center(child: CircularProgressIndicator());
+  return const ListSkeleton();
 }
 
 /// Menjalankan simpan ke server. Sukses -> snackbar [sukses] dan true;

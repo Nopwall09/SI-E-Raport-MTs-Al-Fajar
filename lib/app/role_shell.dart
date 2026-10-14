@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -31,15 +32,14 @@ class RoleShell extends ConsumerWidget {
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: NavigationBar(
-        // 6 tab (admin) terlalu sempit kalau semua label tampil.
-        labelBehavior: visible.length > 5
-            ? NavigationDestinationLabelBehavior.onlyShowSelected
-            : NavigationDestinationLabelBehavior.alwaysShow,
         selectedIndex: selected < 0 ? 0 : selected,
-        onDestinationSelected: (index) => navigationShell.goBranch(
-          visible[index],
-          initialLocation: index == selected,
-        ),
+        onDestinationSelected: (index) {
+          HapticFeedback.selectionClick();
+          navigationShell.goBranch(
+            visible[index],
+            initialLocation: index == selected,
+          );
+        },
         destinations: [
           for (final i in visible)
             NavigationDestination(

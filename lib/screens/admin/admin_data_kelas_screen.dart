@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../app/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../widgets/motion.dart';
 import '../../features/admin/presentation/admin_providers.dart';
 import '../../features/admin/presentation/admin_widgets.dart';
 import '../../models/kelas_model.dart';
@@ -30,18 +32,14 @@ class _AdminDataKelasScreenState extends ConsumerState<AdminDataKelasScreen> {
   Widget build(BuildContext context) {
     final lista = ref.watch(adminKelasProvider);
     _daftarKelas = lista.valueOrNull ?? const [];
-    const brandColor = Color(0xFF0D5C3A);
+    const brandColor = kBrand;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAF9),
       appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        scrolledUnderElevation: 1,
         title: const Text(
           'Data Kelas',
           style: TextStyle(
-            color: Color(0xFF1E293B),
+            color: kText,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -50,6 +48,7 @@ class _AdminDataKelasScreenState extends ConsumerState<AdminDataKelasScreen> {
       body: statusAsync(lista, () => ref.invalidate(adminKelasProvider)) ??
           SafeArea(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Filter Tingkat Kelas Chips
             Container(
@@ -64,7 +63,7 @@ class _AdminDataKelasScreenState extends ConsumerState<AdminDataKelasScreen> {
                       padding: const EdgeInsets.only(right: 8),
                       child: InkWell(
                         onTap: () => setState(() => _selectedTingkat = tingkat),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(999),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 180),
                           padding: const EdgeInsets.symmetric(
@@ -72,12 +71,12 @@ class _AdminDataKelasScreenState extends ConsumerState<AdminDataKelasScreen> {
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? brandColor
-                                : const Color(0xFFF1F5F9),
-                            borderRadius: BorderRadius.circular(20),
+                                : kField,
+                            borderRadius: BorderRadius.circular(999),
                             border: Border.all(
                               color: isSelected
                                   ? brandColor
-                                  : Colors.grey.shade300,
+                                  : kBorder,
                             ),
                           ),
                           child: Text(
@@ -89,7 +88,7 @@ class _AdminDataKelasScreenState extends ConsumerState<AdminDataKelasScreen> {
                                   : FontWeight.w500,
                               color: isSelected
                                   ? Colors.white
-                                  : Colors.grey.shade700,
+                                  : kMuted,
                             ),
                           ),
                         ),
@@ -109,35 +108,42 @@ class _AdminDataKelasScreenState extends ConsumerState<AdminDataKelasScreen> {
                       child: Text(
                         'Tidak ada kelas ditemukan',
                         style: TextStyle(
-                          color: Colors.grey.shade600,
+                          color: kMuted,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                     )
-                  : ListView.separated(
-                      padding: const EdgeInsets.all(16),
+                  : RefreshIndicator(
+                      color: kBrand,
+                      onRefresh: () async {
+                        ref.invalidate(adminKelasProvider);
+                        try {
+                          await ref.read(adminKelasProvider.future);
+                        } catch (_) {}
+                      },
+                      child: ListView.separated(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
                       itemCount: _filteredKelas.length,
                       separatorBuilder: (context, index) =>
                           const SizedBox(height: 10),
                       itemBuilder: (context, index) {
                         final kelas = _filteredKelas[index];
-                        return _buildKelasCard(kelas, brandColor);
+                        return FadeSlideIn(
+                          index: index,
+                          child: PressScale(child: _buildKelasCard(kelas, brandColor)),
+                        );
                       },
+                    ),
                     ),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFFE2E8F0),
-        foregroundColor: const Color(0xFF0F172A),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(50),
-          side: const BorderSide(color: Color(0xFF334155), width: 1.5),
-        ),
-        elevation: 2,
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddKelasSheet(context),
-        child: const Icon(Icons.add, size: 28),
+        icon: const Icon(Icons.add),
+        label: const Text('Tambah'),
       ),
     );
   }
@@ -146,20 +152,14 @@ class _AdminDataKelasScreenState extends ConsumerState<AdminDataKelasScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300, width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(kRadiusCard),
+        border: Border.all(color: kBorder),
+        boxShadow: kCardShadow,
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(kRadiusCard),
           onTap: () => _showKelasDetailSheet(context, kelas, brandColor),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -174,7 +174,7 @@ class _AdminDataKelasScreenState extends ConsumerState<AdminDataKelasScreen> {
                         style: const TextStyle(
                           fontSize: 14.5,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1E293B),
+                          color: kText,
                         ),
                       ),
                       const SizedBox(height: 3),
@@ -182,7 +182,7 @@ class _AdminDataKelasScreenState extends ConsumerState<AdminDataKelasScreen> {
                         'Wali ${kelas.namaWali} · ${kelas.jumlahSiswa} siswa',
                         style: TextStyle(
                           fontSize: 12.5,
-                          color: Colors.grey.shade600,
+                          color: kMuted,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -192,7 +192,7 @@ class _AdminDataKelasScreenState extends ConsumerState<AdminDataKelasScreen> {
                 Icon(
                   Icons.chevron_right,
                   size: 20,
-                  color: Colors.grey.shade400,
+                  color: kMuted,
                 ),
               ],
             ),
@@ -207,9 +207,6 @@ class _AdminDataKelasScreenState extends ConsumerState<AdminDataKelasScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -224,7 +221,7 @@ class _AdminDataKelasScreenState extends ConsumerState<AdminDataKelasScreen> {
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E293B),
+                    color: kText,
                   ),
                 ),
                 IconButton(
@@ -246,7 +243,7 @@ class _AdminDataKelasScreenState extends ConsumerState<AdminDataKelasScreen> {
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(kRadiusControl),
                 ),
               ),
               onPressed: () {
@@ -275,14 +272,14 @@ class _AdminDataKelasScreenState extends ConsumerState<AdminDataKelasScreen> {
         children: [
           Text(
             label,
-            style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+            style: TextStyle(fontSize: 13, color: kMuted),
           ),
           Text(
             value,
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF1E293B),
+              color: kText,
             ),
           ),
         ],
@@ -301,9 +298,6 @@ class _AdminDataKelasScreenState extends ConsumerState<AdminDataKelasScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) => Padding(
           padding: EdgeInsets.only(
@@ -334,12 +328,9 @@ class _AdminDataKelasScreenState extends ConsumerState<AdminDataKelasScreen> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: selectedTingkat,
+                initialValue: selectedTingkat,
                 decoration: InputDecoration(
                   labelText: 'Tingkat Kelas',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
                 ),
                 items: const [
                   DropdownMenuItem(value: 'VII', child: Text('Tingkat VII')),
@@ -358,19 +349,13 @@ class _AdminDataKelasScreenState extends ConsumerState<AdminDataKelasScreen> {
                 decoration: InputDecoration(
                   labelText: 'Nama Kelas',
                   hintText: 'Contoh: VII-D atau VIII-C',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
                 ),
               ),
               const SizedBox(height: 10),
               DropdownButtonFormField<int?>(
-                value: selectedWaliId,
+                initialValue: selectedWaliId,
                 decoration: InputDecoration(
                   labelText: 'Wali Kelas (opsional)',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
                 ),
                 items: [
                   const DropdownMenuItem<int?>(
@@ -383,11 +368,11 @@ class _AdminDataKelasScreenState extends ConsumerState<AdminDataKelasScreen> {
               const SizedBox(height: 18),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0D5C3A),
+                  backgroundColor: kBrand,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(kRadiusControl),
                   ),
                 ),
                 onPressed: () async {

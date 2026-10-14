@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../app/theme.dart';
 
 class TrendChartWidget extends StatelessWidget {
   final List<double> values;
@@ -23,8 +24,8 @@ class TrendChartWidget extends StatelessWidget {
           child: CustomPaint(
             painter: _SparklinePainter(
               values: values,
-              lineColor: const Color(0xFF0D5C3A),
-              fillColor: const Color(0xFF0D5C3A).withOpacity(0.12),
+              lineColor: kBrand,
+              fillColor: kBrand.withValues(alpha: 0.12),
             ),
           ),
         ),
@@ -35,7 +36,7 @@ class TrendChartWidget extends StatelessWidget {
             l,
             style: TextStyle(
               fontSize: 11,
-              color: Colors.grey.shade600,
+              color: kMuted,
               fontWeight: FontWeight.w500,
             ),
           )).toList(),

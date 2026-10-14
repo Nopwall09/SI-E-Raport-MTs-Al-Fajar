@@ -128,6 +128,7 @@ class AdminRepository {
         .select(
             'id,nama,tingkat(nama),guru!wali_kelas_id(nama),kelas_siswa(count)')
         .eq('tahun_ajaran_id', ta.id)
+        .order('tingkat_id')
         .order('nama');
     return [
       for (final r in rows)
@@ -167,6 +168,7 @@ class AdminRepository {
         .from('kelas')
         .select('id,nama')
         .eq('tahun_ajaran_id', ta.id)
+        .order('tingkat_id')
         .order('nama');
     return [for (final r in rows) Opsi(r['id'] as int, r['nama'] as String)];
   }

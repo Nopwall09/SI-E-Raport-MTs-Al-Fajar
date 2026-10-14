@@ -1,75 +1,78 @@
 import 'package:flutter/material.dart';
 
+import '../app/theme.dart';
+import 'motion.dart';
+
+/// Kartu angka ringkas. Satu aksen (hijau merek) untuk semua kartu agar
+/// halaman terbaca sebagai satu sistem, bukan empat warna berbeda.
 class StatCardWidget extends StatelessWidget {
   final String title;
   final String count;
   final IconData icon;
-  final Color accentColor;
+  final int index;
 
   const StatCardWidget({
     super.key,
     required this.title,
     required this.count,
     required this.icon,
-    this.accentColor = const Color(0xFF0D5C3A),
+    this.index = 0,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade200, width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+    const angkaStyle = TextStyle(
+      fontSize: 30,
+      fontWeight: FontWeight.w700,
+      color: kText,
+      letterSpacing: -0.8,
+      height: 1.1,
+    );
+    final angka = int.tryParse(count);
+
+    return FadeSlideIn(
+      index: index,
+      child: PressScale(
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(kRadiusCard),
+            border: Border.all(color: kBorder),
+            boxShadow: kCardShadow,
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade700,
-                ),
-              ),
               Container(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: accentColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  color: kBrandSoft,
+                  borderRadius: BorderRadius.circular(kRadiusControl),
                 ),
-                child: Icon(
-                  icon,
-                  size: 18,
-                  color: accentColor,
-                ),
+                child: Icon(icon, size: 20, color: kBrand),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  angka == null
+                      ? Text(count, style: angkaStyle)
+                      : CountUp(value: angka, style: angkaStyle),
+                  const SizedBox(height: 2),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: kMuted,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            count,
-            style: const TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1E293B),
-              letterSpacing: -0.5,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

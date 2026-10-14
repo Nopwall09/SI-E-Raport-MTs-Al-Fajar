@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../app/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../features/auth/presentation/auth_controller.dart';
+import '../../widgets/motion.dart';
 import '../../features/admin/presentation/admin_providers.dart';
 import '../../features/admin/presentation/admin_widgets.dart';
 import '../../models/dashboard_model.dart';
@@ -13,50 +16,48 @@ class AdminDashboardScreen extends ConsumerWidget {
     final statistik = ref.watch(adminStatistikProvider);
     final progres = ref.watch(adminProgresProvider);
     final periode = ref.watch(tahunAjaranAktifProvider).valueOrNull?.label ?? '';
+    final nama = ref.watch(authControllerProvider).value?.name ?? '';
     final status = statusAsync(statistik, () {
       ref.invalidate(adminStatistikProvider);
       ref.invalidate(adminProgresProvider);
     }) ?? statusAsync(progres, () => ref.invalidate(adminProgresProvider));
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAF9),
       appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        scrolledUnderElevation: 1,
         title: const Text(
           'Dashboard',
           style: TextStyle(
-            color: Color(0xFF1E293B),
+            color: kText,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none, color: Color(0xFF64748B)),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Tidak ada notifikasi baru.')),
-              );
-            },
-          ),
-          const SizedBox(width: 4),
-        ],
       ),
-      body: status ?? _isi(context, statistik.value!, progres.value!, periode),
+      body: status ?? _isi(context, ref, statistik.value!, progres.value!, periode, nama),
     );
   }
 
-  Widget _isi(BuildContext context, DashboardStatistik s,
-      List<ProgressInputNilai> daftar, String periode) {
-    const brandColor = Color(0xFF0D5C3A);
+  Widget _isi(BuildContext context, WidgetRef ref, DashboardStatistik s,
+      List<ProgressInputNilai> daftar, String periode, String nama) {
+    const brandColor = kBrand;
     return SafeArea(
-        child: SingleChildScrollView(
+        child: RefreshIndicator(
+          color: kBrand,
+          onRefresh: () async {
+            ref.invalidate(adminStatistikProvider);
+            ref.invalidate(adminProgresProvider);
+            try {
+              await ref.read(adminStatistikProvider.future);
+            } catch (_) {}
+          },
+          child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              FadeSlideIn(child: _Sambutan(nama: nama, periode: periode)),
+              const SizedBox(height: 16),
               // 2x2 Grid Statistik (Siswa, Guru, Kelas, Orang Tua)
               GridView.count(
                 crossAxisCount: 2,
@@ -67,28 +68,28 @@ class AdminDashboardScreen extends ConsumerWidget {
                 childAspectRatio: 1.35,
                 children: [
                   StatCardWidget(
+                    index: 1,
                     title: 'Siswa',
                     count: '${s.totalSiswa}',
                     icon: Icons.school_outlined,
-                    accentColor: const Color(0xFF0D5C3A),
                   ),
                   StatCardWidget(
+                    index: 2,
                     title: 'Guru',
                     count: '${s.totalGuru}',
                     icon: Icons.person_outline,
-                    accentColor: const Color(0xFF2563EB),
                   ),
                   StatCardWidget(
+                    index: 3,
                     title: 'Kelas',
                     count: '${s.totalKelas}',
                     icon: Icons.meeting_room_outlined,
-                    accentColor: const Color(0xFFD97706),
                   ),
                   StatCardWidget(
+                    index: 4,
                     title: 'Orang Tua',
                     count: '${s.totalOrangTua}',
                     icon: Icons.family_restroom_outlined,
-                    accentColor: const Color(0xFF7C3AED),
                   ),
                 ],
               ),
@@ -96,27 +97,14 @@ class AdminDashboardScreen extends ConsumerWidget {
               const SizedBox(height: 22),
 
               // Section Header: Progres input nilai
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
+              const Text(
                     'Progres input nilai',
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E293B),
+                      color: kText,
                     ),
                   ),
-                  Text(
-                    periode,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                ],
-              ),
 
               const SizedBox(height: 12),
 
@@ -130,23 +118,18 @@ class AdminDashboardScreen extends ConsumerWidget {
                   final item = daftar[index];
                   final isCompleted = item.persen >= 100;
 
-                  return Container(
+                  return FadeSlideIn(
+                    index: index,
+                    child: Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(kRadiusCard),
                       border: Border.all(
                         color: isCompleted
-                            ? const Color(0xFF86EFAC)
-                            : Colors.grey.shade200,
+                            ? kBrand.withValues(alpha: 0.4)
+                            : kBorder,
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.02),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -165,7 +148,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 7, vertical: 2),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFFF1F5F9),
+                                          color: kField,
                                           borderRadius:
                                               BorderRadius.circular(5),
                                         ),
@@ -174,7 +157,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                                           style: const TextStyle(
                                             fontSize: 11.5,
                                             fontWeight: FontWeight.bold,
-                                            color: Color(0xFF334155),
+                                            color: kText,
                                           ),
                                         ),
                                       ),
@@ -197,23 +180,23 @@ class AdminDashboardScreen extends ConsumerWidget {
                                   horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
                                 color: isCompleted
-                                    ? const Color(0xFFDCFCE7)
-                                    : const Color(0xFFF1F5F9),
-                                borderRadius: BorderRadius.circular(6),
+                                    ? kBrandSoft
+                                    : kField,
+                                borderRadius: BorderRadius.circular(999),
                                 border: Border.all(
                                   color: isCompleted
-                                      ? const Color(0xFF86EFAC)
-                                      : Colors.grey.shade300,
+                                      ? kBrand.withValues(alpha: 0.4)
+                                      : kBorder,
                                 ),
                               ),
                               child: Text(
-                                '[ ${item.persen}% ]',
+                                '${item.persen}%',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                   color: isCompleted
-                                      ? const Color(0xFF15803D)
-                                      : const Color(0xFF1E293B),
+                                      ? kBrand
+                                      : kText,
                                 ),
                               ),
                             ),
@@ -222,13 +205,17 @@ class AdminDashboardScreen extends ConsumerWidget {
                         const SizedBox(height: 10),
                         ClipRRect(
                           borderRadius: BorderRadius.circular(999),
-                          child: LinearProgressIndicator(
-                            value: item.persen / 100,
+                          child: TweenAnimationBuilder<double>(
+                            tween: Tween(begin: 0, end: item.persen / 100),
+                            duration: const Duration(milliseconds: 700),
+                            curve: Curves.easeOutCubic,
+                            builder: (context, v, _) => LinearProgressIndicator(
+                            value: v,
                             minHeight: 6,
-                            backgroundColor: const Color(0xFFE2E8F0),
+                            backgroundColor: kBorder,
                             valueColor: AlwaysStoppedAnimation<Color>(
                               isCompleted
-                                  ? const Color(0xFF10B981)
+                                  ? kBrand
                                   : (item.persen >= 75
                                       ? brandColor
                                       : (item.persen >= 50
@@ -236,9 +223,11 @@ class AdminDashboardScreen extends ConsumerWidget {
                                           : const Color(0xFFEF4444))),
                             ),
                           ),
+                          ),
                         ),
                       ],
                     ),
+                  ),
                   );
                 },
               ),
@@ -247,6 +236,74 @@ class AdminDashboardScreen extends ConsumerWidget {
             ],
           ),
         ),
+        ),
       );
+  }
+}
+
+
+/// Kepala dashboard: sapaan dan periode aktif. Satu-satunya blok berlatar
+/// penuh, supaya mata mendarat di sini dulu.
+class _Sambutan extends StatelessWidget {
+  const _Sambutan({required this.nama, required this.periode});
+
+  final String nama;
+  final String periode;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(kRadiusCard),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [kBrand, Color(0xFF167A50)],
+        ),
+        boxShadow: const [
+          BoxShadow(color: Color(0x330D5C3A), blurRadius: 24, offset: Offset(0, 10)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Selamat datang',
+            style: TextStyle(color: Color(0xCCFFFFFF), fontSize: 13),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            nama,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.4,
+            ),
+          ),
+          if (periode.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0x29FFFFFF),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                periode,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
