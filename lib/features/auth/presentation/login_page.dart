@@ -63,12 +63,19 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text('E-Raport MTs Al Fajar',
-                        style: theme.textTheme.headlineSmall),
-                    const SizedBox(height: 4),
-                    Text('Masuk dengan akun dari sekolah',
-                        style: theme.textTheme.bodyMedium),
-                    const SizedBox(height: 32),
+                    Image.asset('assets/Logo.png',
+                        height: 120, fit: BoxFit.contain),
+                    const SizedBox(height: 24),
+                    Text('Sistem Informasi Akademik',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.titleLarge),
+                    Text('E-Rapor MTs Al-Fajar',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.primary,
+                        )),
+                    const SizedBox(height: 40),
                     TextFormField(
                       controller: _username,
                       enabled: !_submitting,
@@ -76,6 +83,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       autofillHints: const [AutofillHints.username],
                       decoration: const InputDecoration(
                         labelText: 'Username',
+                        prefixIcon: Icon(Icons.person_outline),
                         border: OutlineInputBorder(),
                       ),
                       validator: (v) => (v == null || v.trim().isEmpty)
@@ -92,6 +100,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       onFieldSubmitted: (_) => _submit(),
                       decoration: InputDecoration(
                         labelText: 'Password',
+                        prefixIcon: const Icon(Icons.lock_outline),
                         border: const OutlineInputBorder(),
                         suffixIcon: IconButton(
                           tooltip: _obscure
@@ -117,6 +126,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     ],
                     const SizedBox(height: 24),
                     FilledButton(
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
                       onPressed: _submitting ? null : _submit,
                       child: _submitting
                           ? const SizedBox(
