@@ -4,9 +4,13 @@ Aplikasi Flutter (Android) untuk sistem E-Raport dan Portal Wali Murid
 MTs Al Fajar Kandat. Backend memakai Supabase (Auth, Postgres + RLS, Edge
 Functions, Storage). Tidak ada server backend sendiri dan tidak ada web.
 
-Skeleton ini mencakup target Sprint 1 sisi aplikasi: struktur folder, login,
-router dan shell navigasi per role. Fitur penilaian, rapor, dan layar admin
-masih berupa halaman sementara.
+Status saat ini: struktur folder, login, router, dan shell navigasi per role
+(target Sprint 1) sudah jalan. Layar admin (beranda, siswa, guru, kelas,
+pengguna) sudah tersambung ke Supabase dan bisa menambah data. Layar guru,
+siswa, wali murid, penilaian, dan rapor masih berupa halaman sementara.
+
+Skema database, Edge Function pembuat akun, dan data contoh ada di
+`supabase/` (lihat `supabase/README.md`).
 
 ## Menjalankan
 
@@ -31,7 +35,11 @@ lib/
   core/       config, error, provider Supabase, widget bersama
   features/
     auth/         domain/ data/ presentation/
+    admin/        data/ presentation/   (repository dan provider admin)
     dashboard/    presentation/
+  screens/admin/  layar admin
+  widgets/        komponen bersama (kartu statistik, animasi)
+supabase/         migration, Edge Function, seed
 ```
 
 Aturan: layar tidak memanggil Supabase langsung. Layar memakai controller,
