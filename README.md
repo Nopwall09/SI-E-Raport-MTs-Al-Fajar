@@ -6,8 +6,9 @@ Functions, Storage). Tidak ada server backend sendiri dan tidak ada web.
 
 Status saat ini: struktur folder, login, router, dan shell navigasi per role
 (target Sprint 1) sudah jalan. Layar admin (beranda, siswa, guru, kelas,
-pengguna) sudah tersambung ke Supabase dan bisa menambah data. Layar guru,
-siswa, wali murid, penilaian, dan rapor masih berupa halaman sementara.
+pengguna) sudah tersambung ke Supabase dan bisa menambah data. Layar guru
+(beranda, input nilai UTS, progres wali kelas) juga sudah jalan. Layar siswa,
+wali murid, dan rapor masih berupa halaman sementara.
 
 Skema database, Edge Function pembuat akun, dan data contoh ada di
 `supabase/` (lihat `supabase/README.md`).
@@ -36,6 +37,8 @@ lib/
   features/
     auth/         domain/ data/ presentation/
     admin/        data/ presentation/   (repository dan provider admin)
+    nilai/        data/ presentation/   (input nilai guru)
+    wali_kelas/   data/ presentation/   (progres nilai kelas wali)
     dashboard/    presentation/
   screens/admin/  layar admin
   widgets/        komponen bersama (kartu statistik, animasi)

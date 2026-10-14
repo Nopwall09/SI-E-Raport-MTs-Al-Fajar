@@ -2,12 +2,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers.dart';
 import '../../admin/presentation/admin_providers.dart';
+import '../../auth/presentation/auth_controller.dart';
 import '../data/nilai_repository.dart';
 
 final nilaiRepositoryProvider = Provider<NilaiRepository>(
     (ref) => NilaiRepository(ref.watch(supabaseClientProvider)));
 
 final penugasanSayaProvider = FutureProvider<List<Penugasan>>((ref) async {
+  // Bergantung pada pengguna agar data akun sebelumnya tidak terbawa.
+  ref.watch(authControllerProvider.select((u) => u.value?.id));
   final ta = await ref.watch(tahunAjaranAktifProvider.future);
   return ref.watch(nilaiRepositoryProvider).penugasanSaya(ta.id);
 });
@@ -27,6 +30,8 @@ final siswaNilaiProvider =
 
 final progresPenugasanProvider =
     FutureProvider<List<PenugasanProgres>>((ref) async {
+  // Bergantung pada pengguna agar data akun sebelumnya tidak terbawa.
+  ref.watch(authControllerProvider.select((u) => u.value?.id));
   final ta = await ref.watch(tahunAjaranAktifProvider.future);
   return ref
       .watch(nilaiRepositoryProvider)
