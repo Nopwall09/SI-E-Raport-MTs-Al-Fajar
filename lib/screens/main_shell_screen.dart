@@ -3,11 +3,15 @@ import 'wali/wali_rapor_screen.dart';
 import 'admin/admin_dashboard_screen.dart';
 import 'admin/admin_pengguna_screen.dart';
 import 'admin/admin_data_siswa_screen.dart';
+import 'admin/admin_data_guru_screen.dart';
+import 'admin/admin_data_kelas_screen.dart';
 
 enum AppViewMode {
   waliRapor,
   adminDashboard,
   adminDataSiswa,
+  adminDataGuru,
+  adminDataKelas,
   adminPengguna,
 }
 
@@ -131,6 +135,30 @@ class _MainShellScreenState extends State<MainShellScreen> {
                 },
               ),
 
+              // Wireframe: Data Guru
+              _buildDrawerItem(
+                icon: Icons.person_search_outlined,
+                title: 'Data Guru',
+                subtitle: 'Wireframe: Admin - Data Guru',
+                isSelected: _currentView == AppViewMode.adminDataGuru,
+                onTap: () {
+                  setState(() => _currentView = AppViewMode.adminDataGuru);
+                  Navigator.pop(context);
+                },
+              ),
+
+              // Wireframe: Data Kelas
+              _buildDrawerItem(
+                icon: Icons.meeting_room_outlined,
+                title: 'Data Kelas',
+                subtitle: 'Wireframe: Admin - Data Kelas',
+                isSelected: _currentView == AppViewMode.adminDataKelas,
+                onTap: () {
+                  setState(() => _currentView = AppViewMode.adminDataKelas);
+                  Navigator.pop(context);
+                },
+              ),
+
               // Wireframe 3
               _buildDrawerItem(
                 icon: Icons.people_outline,
@@ -198,6 +226,14 @@ class _MainShellScreenState extends State<MainShellScreen> {
         );
       case AppViewMode.adminDataSiswa:
         return AdminDataSiswaScreen(
+          onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
+        );
+      case AppViewMode.adminDataGuru:
+        return AdminDataGuruScreen(
+          onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
+        );
+      case AppViewMode.adminDataKelas:
+        return AdminDataKelasScreen(
           onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
         );
       case AppViewMode.adminPengguna:
