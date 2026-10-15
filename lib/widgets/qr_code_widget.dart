@@ -20,15 +20,21 @@ class QrCodeWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       label: 'QR-Code verifikasi',
-      child: QrImageView(
-        data: data,
-        size: size,
-        backgroundColor: backgroundColor,
-        padding: const EdgeInsets.all(12),
-        eyeStyle: QrEyeStyle(eyeShape: QrEyeShape.square, color: color),
-        dataModuleStyle: QrDataModuleStyle(
-          dataModuleShape: QrDataModuleShape.square,
-          color: color,
+      // QrImageView memakai LayoutBuilder, yang tidak bisa ditanya ukuran
+      // intrinsiknya (AlertDialog melakukannya). Ukuran pasti dari luar
+      // menjawab pertanyaan itu tanpa menyentuh LayoutBuilder.
+      child: SizedBox.square(
+        dimension: size,
+        child: QrImageView(
+          data: data,
+          size: size,
+          backgroundColor: backgroundColor,
+          padding: const EdgeInsets.all(12),
+          eyeStyle: QrEyeStyle(eyeShape: QrEyeShape.square, color: color),
+          dataModuleStyle: QrDataModuleStyle(
+            dataModuleShape: QrDataModuleShape.square,
+            color: color,
+          ),
         ),
       ),
     );
