@@ -7,6 +7,7 @@ import '../features/dashboard/presentation/dashboard_page.dart';
 import '../features/dashboard/presentation/guru_beranda_page.dart';
 import '../features/nilai/presentation/nilai_page.dart';
 import '../features/wali_kelas/presentation/wali_kelas_page.dart';
+import '../features/wali_murid/presentation/wali_murid_page.dart';
 import '../screens/admin/admin_dashboard_screen.dart';
 import '../screens/admin/admin_data_guru_screen.dart';
 import '../screens/admin/admin_data_kelas_screen.dart';
@@ -162,13 +163,19 @@ List<AppTab> tabsFor(UserRole role) {
       ];
     case UserRole.waliMurid:
       return [
-        _beranda(),
-        _segera(
+        AppTab(
+          slug: 'beranda',
+          label: 'Beranda',
+          icon: Icons.home_outlined,
+          selectedIcon: Icons.home,
+          builder: () => const WaliMuridPage(),
+        ),
+        AppTab(
           slug: 'anak',
           label: 'Anak',
           icon: Icons.family_restroom_outlined,
           selectedIcon: Icons.family_restroom,
-          sprint: 3,
+          builder: () => const WaliMuridPage(),
         ),
         _profil(),
       ];
