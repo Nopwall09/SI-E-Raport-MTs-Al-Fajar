@@ -1,7 +1,11 @@
+import 'dart:math' as math;
+import 'dart:typed_data';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/error/app_exception.dart';
 import '../../../models/dashboard_model.dart';
+import '../../../models/data_rapor_model.dart';
 import '../../../models/guru_model.dart';
 import '../../../models/kelas_model.dart';
 import '../../../models/siswa_model.dart';
@@ -342,6 +346,109 @@ class AdminRepository {
   /// nonaktif tidak bisa masuk karena get_my_profile() mensyaratkan is_active.
   Future<void> setPenggunaAktif(String userId, bool aktif) =>
       _db.from('users').update({'is_active': aktif}).eq('id', userId);
+
+  /// Kesiapan rapor: jumlah mapel yang sudah ada nilainya per siswa di satu
+  /// kelas pada semester [semester] ('ganjil' atau 'genap').
+  Future<List<DataRaporModel>> daftarRapor({
+    required int kelasId,
+    required String kelasNama,
+    required String semester,
+  }) async {
+    final ta = await tahunAjaranAktif();
+    final anggota = await _db
+        .from('kelas_siswa')
+        .select('id,siswa(id,nama,nis,nisn)')
+        .eq('kelas_id', kelasId)
+        .eq('tahun_ajaran_id', ta.id);
+    final total =
+        (await _db
+                .from('penugasan_mengajar')
+                .select('id')
+                .eq('kelas_id', kelasId)
+                .count(CountOption.exact))
+            .count;
+    final ksIds = [for (final a in anggota) a['id'] as int];
+    final nilai = ksIds.isEmpty
+        ? const <Map<String, dynamic>>[]
+        : await _db
+              .from('detnilai')
+              .select('kelas_siswa_id')
+              .inFilter('kelas_siswa_id', ksIds)
+              .eq('semester', semester);
+    final terisi = <int, int>{};
+    for (final n in nilai) {
+      terisi.update(
+        n['kelas_siswa_id'] as int,
+        (v) => v + 1,
+        ifAbsent: () => 1,
+      );
+    }
+    final hasil = [
+      for (final a in anggota)
+        DataRaporModel(
+          id: '${a['siswa']['id']}',
+          namaSiswa: a['siswa']['nama'] as String,
+          nisn: (a['siswa']['nisn'] ?? a['siswa']['nis']) as String,
+          kelas: kelasNama,
+          semester: semester,
+          mapelSelesai: math.min(terisi[a['id'] as int] ?? 0, total),
+          totalMapel: total,
+        ),
+    ];
+    hasil.sort((a, b) => a.namaSiswa.compareTo(b.namaSiswa));
+    return hasil;
+  }
+
+  // ---- Supabase Storage (bucket privat, hanya admin; lihat migrasi 000004) ----
+
+  static const _bucketFoto = 'foto-siswa';
+  static const _bucketBukti = 'rapor-bukti';
+
+  Future<void> unggahFotoSiswa(int siswaId, Uint8List bytes, String mime) =>
+      _unggah(_bucketFoto, '$siswaId', bytes, mime);
+
+  /// URL bertanda (berlaku 1 jam), atau null bila siswa belum punya foto.
+  Future<String?> urlFotoSiswa(int siswaId) =>
+      _urlBertanda(_bucketFoto, '$siswaId');
+
+  Future<void> unggahBuktiRapor({
+    required int siswaId,
+    required String semester,
+    required Uint8List bytes,
+    required String mime,
+  }) async {
+    final ta = await tahunAjaranAktif();
+    await _unggah(_bucketBukti, '${ta.id}/$semester/$siswaId', bytes, mime);
+  }
+
+  Future<String?> urlBuktiRapor({
+    required int siswaId,
+    required String semester,
+  }) async {
+    final ta = await tahunAjaranAktif();
+    return _urlBertanda(_bucketBukti, '${ta.id}/$semester/$siswaId');
+  }
+
+  Future<void> _unggah(
+    String bucket,
+    String path,
+    Uint8List bytes,
+    String mime,
+  ) => _db.storage
+      .from(bucket)
+      .uploadBinary(
+        path,
+        bytes,
+        fileOptions: FileOptions(contentType: mime, upsert: true),
+      );
+
+  Future<String?> _urlBertanda(String bucket, String path) async {
+    try {
+      return await _db.storage.from(bucket).createSignedUrl(path, 3600);
+    } on StorageException {
+      return null; // berkas belum ada
+    }
+  }
 
   /// Lewat Edge Function karena membuat akun butuh service role.
   Future<void> buatAkun({

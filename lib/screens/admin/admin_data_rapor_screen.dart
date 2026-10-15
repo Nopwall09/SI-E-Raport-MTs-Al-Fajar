@@ -1,16 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../app/theme.dart';
-import '../../core/config/env.dart';
+import '../../core/error/app_exception.dart';
 import '../../core/storage/local_storage_service.dart';
 import '../../core/storage/sqlite_service.dart';
+import '../../core/widgets/error_view.dart';
+import '../../features/admin/data/admin_repository.dart';
+import '../../features/admin/presentation/admin_providers.dart';
+import '../../features/admin/presentation/admin_widgets.dart';
 import '../../models/data_rapor_model.dart';
 import '../../widgets/media_picker_dialog.dart';
+import '../../widgets/motion.dart';
 import '../../widgets/qr_code_widget.dart';
 import 'widgets/admin_menu_drawer.dart';
 
+/// Kesiapan rapor per kelas dan semester, dihitung dari nilai yang sudah
+/// diinput guru. Filter terakhir diingat (SharedPreferences), daftar bisa
+/// disimpan ke SQLite agar tetap terbuka tanpa internet, dan tiap siswa bisa
+/// diberi QR-Code serta bukti fisik (kamera/galeri, Supabase Storage).
 class AdminDataRaporScreen extends ConsumerStatefulWidget {
   const AdminDataRaporScreen({super.key});
 
@@ -20,327 +28,72 @@ class AdminDataRaporScreen extends ConsumerStatefulWidget {
 }
 
 class _AdminDataRaporScreenState extends ConsumerState<AdminDataRaporScreen> {
-  String _selectedKelas = 'VII-A';
-  String _selectedSemester = 'Ganjil';
-
-  // [CheckBox]: Filter hanya yang siap cetak & seleksi masal
-  bool _hanyaYangSiap = false;
-  final Set<String> _selectedIds = {};
-
-  final List<String> _kelasList = [
-    'VII-A',
-    'VII-B',
-    'VII-C',
-    'VIII-A',
-    'VIII-B',
-    'IX-A',
-    'IX-B',
-  ];
-
-  final List<String> _semesterList = ['Ganjil', 'Genap'];
-
-  final List<DataRaporModel> _daftarRapor = [
-    const DataRaporModel(
-      id: '1',
-      namaSiswa: 'Muhammad Farhan Al-Ghifari',
-      nisn: '0089765432',
-      kelas: 'VII-A',
-      semester: 'Ganjil',
-      mapelSelesai: 9,
-      totalMapel: 9,
-      status: 'Siap',
-    ),
-    const DataRaporModel(
-      id: '2',
-      namaSiswa: 'Aisyah Putri Azzahra',
-      nisn: '0081234567',
-      kelas: 'VII-A',
-      semester: 'Ganjil',
-      mapelSelesai: 9,
-      totalMapel: 9,
-      status: 'Siap',
-    ),
-    const DataRaporModel(
-      id: '3',
-      namaSiswa: 'Ahmad Bilal Al-Kautsar',
-      nisn: '0087654321',
-      kelas: 'VII-A',
-      semester: 'Ganjil',
-      mapelSelesai: 9,
-      totalMapel: 9,
-      status: 'Siap',
-    ),
-    const DataRaporModel(
-      id: '4',
-      namaSiswa: 'Fatimah Zahra Maulida',
-      nisn: '0078901234',
-      kelas: 'VII-A',
-      semester: 'Ganjil',
-      mapelSelesai: 8,
-      totalMapel: 9,
-      status: 'Belum Siap',
-    ),
-    const DataRaporModel(
-      id: '5',
-      namaSiswa: 'Rizky Ramadhan',
-      nisn: '0076543210',
-      kelas: 'VII-A',
-      semester: 'Ganjil',
-      mapelSelesai: 9,
-      totalMapel: 9,
-      status: 'Siap',
-    ),
-  ];
+  int? _kelasId;
+  String? _kelasPref;
+  String _semester = 'ganjil';
+  bool _hanyaSiap = false;
+  bool _prefDimuat = false;
 
   @override
   void initState() {
     super.initState();
-    // [SharedPreferences]: Membaca preferensi filter lokal yang tersimpan
-    _muatPreferensiTersimpan();
+    _muatPreferensi();
   }
 
-  Future<void> _muatPreferensiTersimpan() async {
-    final prefs = await LocalStorageService().ambilPreferensiRapor();
+  Future<void> _muatPreferensi() async {
+    final p = await LocalStorageService().ambilPreferensiRapor();
+    if (!mounted) return;
     setState(() {
-      _selectedKelas = prefs['kelas'] as String;
-      _selectedSemester = prefs['semester'] as String;
-      _hanyaYangSiap = prefs['hanyaSiap'] as bool;
+      _kelasPref = p.kelas;
+      _semester = p.semester;
+      _hanyaSiap = p.hanyaSiap;
+      _prefDimuat = true;
     });
   }
 
-  Future<void> _simpanPreferensiSaatIni() async {
-    await LocalStorageService().simpanPreferensiRapor(
-      kelas: _selectedKelas,
-      semester: _selectedSemester,
-      hanyaSiap: _hanyaYangSiap,
-    );
-  }
+  void _simpanPreferensi(String? kelasNama) =>
+      LocalStorageService().simpanPreferensiRapor(
+        kelas: kelasNama,
+        semester: _semester,
+        hanyaSiap: _hanyaSiap,
+      );
 
-  List<DataRaporModel> get _filteredRapor {
-    return _daftarRapor.where((item) {
-      if (_hanyaYangSiap && !item.isSiap) return false;
-      return true;
-    }).toList();
-  }
+  static String _labelSemester(String s) => s == 'ganjil' ? 'Ganjil' : 'Genap';
 
   @override
   Widget build(BuildContext context) {
-    final list = _filteredRapor;
-    final allSelected =
-        list.isNotEmpty && list.every((item) => _selectedIds.contains(item.id));
+    final opsi = ref.watch(opsiKelasProvider).valueOrNull ?? const <Opsi>[];
+    final kelas =
+        opsi.where((o) => o.id == _kelasId).firstOrNull ??
+        opsi.where((o) => o.label == _kelasPref).firstOrNull ??
+        opsi.firstOrNull;
+    _kelasId = kelas?.id;
+
+    final kunci = kelas == null
+        ? null
+        : (kelasId: kelas.id, kelasNama: kelas.label, semester: _semester);
+    final data = kunci == null ? null : ref.watch(adminRaporProvider(kunci));
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAF9),
       drawer: const AdminMenuDrawer(currentRoute: '/admin/rapor'),
-      appBar: AppBar(
-        title: const Text(
-          'Data Rapor',
-          style: TextStyle(
-            color: kText,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        actions: [
-          // [Database Sqlite (1%)]: Tombol sinkronisasi ke cache lokal SQLite
-          IconButton(
-            icon: const Icon(Icons.cloud_sync_outlined),
-            tooltip: 'Sinkronisasi SQLite Lokal (Offline Mode)',
-            onPressed: () => _sinkronisasiKeSqlite(context),
-          ),
-          const SizedBox(width: 4),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Data Rapor')),
       body: SafeArea(
         child: Column(
           children: [
-            // Filter Dropdown Baris: Kelas & Semester
-            Container(
-              color: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF1F5F9),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.grey.shade300),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: _selectedKelas,
-                              isExpanded: true,
-                              icon: const Icon(Icons.keyboard_arrow_down,
-                                  size: 20),
-                              items: _kelasList.map((k) {
-                                return DropdownMenuItem(
-                                  value: k,
-                                  child: Text(
-                                    'Kelas $k',
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: (val) {
-                                if (val != null) {
-                                  setState(() => _selectedKelas = val);
-                                  _simpanPreferensiSaatIni();
-                                }
-                              },
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF1F5F9),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.grey.shade300),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: _selectedSemester,
-                              isExpanded: true,
-                              icon: const Icon(Icons.keyboard_arrow_down,
-                                  size: 20),
-                              items: _semesterList.map((s) {
-                                return DropdownMenuItem(
-                                  value: s,
-                                  child: Text(
-                                    'Semester $s',
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: (val) {
-                                if (val != null) {
-                                  setState(() => _selectedSemester = val);
-                                  _simpanPreferensiSaatIni();
-                                }
-                              },
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  // [CheckBox]: Filter hanya yang siap cetak & Seleksi semua
-                  Row(
-                    children: [
-                      Checkbox(
-                        value: _hanyaYangSiap,
-                        activeColor: kBrand,
-                        onChanged: (val) {
-                          setState(() => _hanyaYangSiap = val ?? false);
-                          _simpanPreferensiSaatIni();
-                        },
-                      ),
-                      const Text(
-                        'Hanya yang Siap Cetak',
-                        style: TextStyle(
-                            fontSize: 12.5, fontWeight: FontWeight.w500),
-                      ),
-                      const Spacer(),
-                      TextButton.icon(
-                        style: TextButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            if (allSelected) {
-                              _selectedIds.clear();
-                            } else {
-                              _selectedIds.addAll(list.map((e) => e.id));
-                            }
-                          });
-                        },
-                        icon: Icon(
-                          allSelected
-                              ? Icons.check_box
-                              : Icons.check_box_outline_blank,
-                          size: 18,
-                          color: kBrand,
-                        ),
-                        label: Text(
-                          allSelected ? 'Batal Semua' : 'Pilih Semua',
-                          style: const TextStyle(
-                              fontSize: 12.5, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
+            _filter(opsi, kelas),
             const Divider(height: 1),
-
-            // Daftar Siswa & Kesiapan Rapor
             Expanded(
-              child: list.isEmpty
-                  ? Center(
-                      child: Text(
-                        'Tidak ada data rapor yang cocok',
-                        style: TextStyle(color: Colors.grey.shade600),
-                      ),
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: list.length,
-                      separatorBuilder: (context, index) =>
-                          const SizedBox(height: 10),
-                      itemBuilder: (context, index) {
-                        final item = list[index];
-                        return _buildRaporCard(item);
-                      },
+              child: kelas == null || !_prefDimuat
+                  ? (ref.watch(opsiKelasProvider).hasError
+                        ? const Center(
+                            child: Text('Daftar kelas gagal dimuat.'),
+                          )
+                        : const ListSkeleton())
+                  : data!.when(
+                      loading: () => const ListSkeleton(),
+                      error: (e, _) => _luring(e, kelas, kunci!),
+                      data: (list) => _daftar(list, kelas, kunci!),
                     ),
-            ),
-
-            // Tombol Cetak Rapor di Bagian Bawah
-            Container(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              color: Colors.white,
-              child: SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE2E8F0),
-                    foregroundColor: const Color(0xFF0F172A),
-                    side: const BorderSide(color: Color(0xFF334155), width: 1.5),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
-                  onPressed: () => _cetakRaporMasal(context),
-                  icon: const Icon(Icons.print_outlined, size: 20),
-                  label: Text(
-                    _selectedIds.isEmpty
-                        ? 'Cetak Rapor Kelas $_selectedKelas'
-                        : 'Cetak ${_selectedIds.length} Rapor Terpilih',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
             ),
           ],
         ),
@@ -348,271 +101,417 @@ class _AdminDataRaporScreenState extends ConsumerState<AdminDataRaporScreen> {
     );
   }
 
-  /// [FrameLayout (Stack)] & [CheckBox] & [PopupMenu] & [ContextMenu]
-  Widget _buildRaporCard(DataRaporModel item) {
-    final isSelected = _selectedIds.contains(item.id);
-
-    return GestureDetector(
-      // [ContextMenu]: Muncul saat ditekan lama (Long Press)
-      onLongPressStart: (details) =>
-          _showRaporContextMenu(context, details.globalPosition, item),
-      child: Stack(
-        // [FrameLayout]: Tumpukan kartu dengan badge posisi khusus
+  Widget _filter(List<Opsi> opsi, Opsi? kelas) {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: isSelected ? kBrand : Colors.grey.shade300,
-                width: isSelected ? 1.6 : 1.2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
-                  blurRadius: 4,
-                  offset: const Offset(0, 1),
-                ),
+          DropdownButtonFormField<int>(
+            key: ValueKey(kelas?.id),
+            initialValue: kelas?.id,
+            decoration: const InputDecoration(labelText: 'Kelas'),
+            items: [
+              for (final o in opsi)
+                DropdownMenuItem(value: o.id, child: Text(o.label)),
+            ],
+            onChanged: (id) {
+              if (id == null) return;
+              setState(() => _kelasId = id);
+              _simpanPreferensi(opsi.firstWhere((o) => o.id == id).label);
+            },
+          ),
+          const SizedBox(height: 8),
+          // Radio: satu semester aktif pada satu waktu.
+          RadioGroup<String>(
+            groupValue: _semester,
+            onChanged: (v) {
+              if (v == null) return;
+              setState(() => _semester = v);
+              _simpanPreferensi(kelas?.label);
+            },
+            child: Row(
+              children: [
+                for (final s in const ['ganjil', 'genap']) ...[
+                  Radio<String>(value: s),
+                  Text('Semester ${_labelSemester(s)}'),
+                  const SizedBox(width: 8),
+                ],
               ],
             ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(8),
-                onTap: () => _previewRaporSiswa(context, item),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  child: Row(
-                    children: [
-                      // [CheckBox]: Pemilihan siswa per baris untuk cetak masal
-                      Checkbox(
-                        value: isSelected,
-                        activeColor: kBrand,
-                        onChanged: (val) {
-                          setState(() {
-                            if (val == true) {
-                              _selectedIds.add(item.id);
-                            } else {
-                              _selectedIds.remove(item.id);
-                            }
-                          });
-                        },
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              item.namaSiswa,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1E293B),
-                              ),
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              'Nilai ${item.mapelSelesai}/${item.totalMapel} mapel',
-                              style: TextStyle(
-                                fontSize: 12.5,
-                                color: Colors.grey.shade600,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: item.isSiap
-                              ? const Color(0xFFDCFCE7)
-                              : const Color(0xFFFEF3C7),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(
-                            color: item.isSiap
-                                ? const Color(0xFF86EFAC)
-                                : const Color(0xFFFDE68A),
-                          ),
-                        ),
-                        child: Text(
-                          item.status,
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.bold,
-                            color: item.isSiap
-                                ? const Color(0xFF166534)
-                                : const Color(0xFFB45309),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 2),
-
-                      // [PopupMenu]: Tombol titik tiga per item siswa
-                      PopupMenuButton<String>(
-                        icon: const Icon(Icons.more_vert, size: 20),
-                        tooltip: 'Aksi Rapor Siswa',
-                        onSelected: (val) {
-                          if (val == 'preview') {
-                            _previewRaporSiswa(context, item);
-                          } else if (val == 'qr') {
-                            _tampilkanQrValidasi(context, item);
-                          } else if (val == 'media') {
-                            _unggahDokumenFisik(context, item);
-                          } else if (val == 'download') {
-                            _unduhDariSupabaseStorage(context, item);
-                          }
-                        },
-                        itemBuilder: (context) => [
-                          const PopupMenuItem(
-                            value: 'preview',
-                            child: Row(
-                              children: [
-                                Icon(Icons.visibility_outlined, size: 18),
-                                SizedBox(width: 8),
-                                Text('Pratinjau Rapor'),
-                              ],
-                            ),
-                          ),
-                          // [QR-Code (2%)]: Menu tampilkan QR verifikasi
-                          const PopupMenuItem(
-                            value: 'qr',
-                            child: Row(
-                              children: [
-                                Icon(Icons.qr_code, size: 18, color: kBrand),
-                                SizedBox(width: 8),
-                                Text('QR-Code Validasi'),
-                              ],
-                            ),
-                          ),
-                          // [Kamera & Galeri (2%)]: Menu upload foto fisik
-                          const PopupMenuItem(
-                            value: 'media',
-                            child: Row(
-                              children: [
-                                Icon(Icons.camera_alt_outlined, size: 18, color: Colors.blue),
-                                SizedBox(width: 8),
-                                Text('Unggah Dokumen (Kamera/Galeri)'),
-                              ],
-                            ),
-                          ),
-                          const PopupMenuItem(
-                            value: 'download',
-                            child: Row(
-                              children: [
-                                Icon(Icons.cloud_download_outlined,
-                                    size: 18, color: Colors.indigo),
-                                SizedBox(width: 8),
-                                Text('Unduh dari Supabase Storage'),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+          ),
+          CheckboxListTile(
+            contentPadding: EdgeInsets.zero,
+            controlAffinity: ListTileControlAffinity.leading,
+            dense: true,
+            title: const Text('Hanya yang siap cetak'),
+            value: _hanyaSiap,
+            onChanged: (v) {
+              setState(() => _hanyaSiap = v ?? false);
+              _simpanPreferensi(kelas?.label);
+            },
           ),
         ],
       ),
     );
   }
 
-  /// [ContextMenu]: Menu melayang saat ditekan lama
-  void _showRaporContextMenu(
-      BuildContext context, Offset position, DataRaporModel item) {
-    showMenu<String>(
-      context: context,
-      position: RelativeRect.fromLTRB(
-        position.dx,
-        position.dy,
-        position.dx + 1,
-        position.dy + 1,
-      ),
-      items: [
-        PopupMenuItem(
-          value: 'cetak',
-          child: Text('Cetak Lembar: ${item.namaSiswa}'),
+  Widget _daftar(
+    List<DataRaporModel> semua,
+    Opsi kelas,
+    ({int kelasId, String kelasNama, String semester}) kunci, {
+    String? catatanLuring,
+  }) {
+    final list = [
+      for (final r in semua)
+        if (!_hanyaSiap || r.isSiap) r,
+    ];
+    return Column(
+      children: [
+        if (catatanLuring != null)
+          Container(
+            width: double.infinity,
+            color: kBrandSoft,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Row(
+              children: [
+                const Icon(Icons.cloud_off_outlined, size: 18, color: kBrand),
+                const SizedBox(width: 8),
+                Expanded(child: Text(catatanLuring)),
+                TextButton(
+                  onPressed: () => ref.invalidate(adminRaporProvider(kunci)),
+                  child: const Text('Coba lagi'),
+                ),
+              ],
+            ),
+          ),
+        Expanded(
+          child: list.isEmpty
+              ? Center(
+                  child: Text(
+                    semua.isEmpty
+                        ? 'Kelas ini belum punya siswa.'
+                        : 'Belum ada rapor yang siap.',
+                    style: const TextStyle(color: kMuted),
+                  ),
+                )
+              : RefreshIndicator(
+                  color: kBrand,
+                  onRefresh: () async {
+                    ref.invalidate(adminRaporProvider(kunci));
+                    try {
+                      await ref.read(adminRaporProvider(kunci).future);
+                    } catch (_) {}
+                  },
+                  child: ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                    itemCount: list.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 10),
+                    itemBuilder: (_, i) =>
+                        FadeSlideIn(index: i, child: _kartu(list[i])),
+                  ),
+                ),
         ),
-        const PopupMenuItem(
-          value: 'qr',
-          child: Text('Lihat QR-Code Validasi'),
-        ),
-        const PopupMenuItem(
-          value: 'media',
-          child: Text('Ambil Foto Fisik (Kamera/Galeri)'),
-        ),
-        const PopupMenuItem(
-          value: 'storage',
-          child: Text('Ambil Arsip dari Supabase Storage'),
-        ),
+        if (catatanLuring == null)
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            child: SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: semua.isEmpty
+                    ? null
+                    : () => _simpanLuring(semua, kelas.label),
+                icon: const Icon(Icons.cloud_download_outlined, size: 20),
+                label: const Text('Simpan untuk dibuka offline'),
+              ),
+            ),
+          ),
       ],
-    ).then((val) {
-      if (val == 'cetak') {
-        _previewRaporSiswa(context, item);
-      } else if (val == 'qr') {
-        _tampilkanQrValidasi(context, item);
-      } else if (val == 'media') {
-        _unggahDokumenFisik(context, item);
-      } else if (val == 'storage') {
-        _unduhDariSupabaseStorage(context, item);
-      }
-    });
+    );
   }
 
-  /// [QR-Code (Bobot 2%)]: Dialog tampilan QR Code untuk verifikasi keaslian lembar rapor digital
-  void _tampilkanQrValidasi(BuildContext context, DataRaporModel item) {
-    final payload = 'ALFAJAR-RAPOR-${item.nisn}-${item.kelas}-${item.semester}-VALID';
+  /// Gagal memuat dari server: tampilkan salinan SQLite bila ada.
+  Widget _luring(
+    Object error,
+    Opsi kelas,
+    ({int kelasId, String kelasNama, String semester}) kunci,
+  ) {
+    final pesan = AppException.from(error).message;
+    return FutureBuilder<List<Map<String, Object?>>>(
+      future: SqliteOfflineService().bacaRapor(
+        kelas: kelas.label,
+        semester: _semester,
+      ),
+      builder: (context, snap) {
+        if (snap.connectionState != ConnectionState.done) {
+          return const ListSkeleton();
+        }
+        final baris = snap.data ?? const [];
+        if (baris.isEmpty) {
+          return Center(
+            child: ErrorView(
+              message: pesan,
+              onRetry: () => ref.invalidate(adminRaporProvider(kunci)),
+            ),
+          );
+        }
+        final tersimpan = DateTime.tryParse(
+          baris.first['tersimpan_pada'] as String,
+        );
+        return _daftar(
+          [
+            for (final r in baris)
+              DataRaporModel(
+                id: '${r['siswa_id']}',
+                namaSiswa: r['nama_siswa'] as String,
+                nisn: r['nisn'] as String,
+                kelas: r['kelas'] as String,
+                semester: r['semester'] as String,
+                mapelSelesai: r['mapel_selesai'] as int,
+                totalMapel: r['total_mapel'] as int,
+              ),
+          ],
+          kelas,
+          kunci,
+          catatanLuring:
+              'Tidak tersambung. Menampilkan salinan offline'
+              '${tersimpan == null ? '' : ' (${_tanggal(tersimpan)})'}.',
+        );
+      },
+    );
+  }
 
+  static String _tanggal(DateTime t) =>
+      '${t.day.toString().padLeft(2, '0')}-${t.month.toString().padLeft(2, '0')}-${t.year}';
+
+  Future<void> _simpanLuring(List<DataRaporModel> semua, String kelas) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await SqliteOfflineService().simpanRapor(
+        kelas: kelas,
+        semester: _semester,
+        baris: [
+          for (final r in semua)
+            {
+              'siswa_id': int.parse(r.id),
+              'semester': r.semester,
+              'nama_siswa': r.namaSiswa,
+              'nisn': r.nisn,
+              'kelas': r.kelas,
+              'mapel_selesai': r.mapelSelesai,
+              'total_mapel': r.totalMapel,
+            },
+        ],
+      );
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            '${semua.length} siswa kelas $kelas disimpan untuk dibuka offline.',
+          ),
+        ),
+      );
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Gagal menyimpan salinan offline.')),
+      );
+    }
+  }
+
+  Widget _kartu(DataRaporModel r) {
+    return GestureDetector(
+      // Context menu: tekan lama.
+      onLongPressStart: (d) => _menuTekanLama(d.globalPosition, r),
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(kRadiusCard),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(kRadiusCard),
+          onTap: () => _pratinjau(r),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(16, 12, 4, 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(kRadiusCard),
+              border: Border.all(color: kBorder),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        r.namaSiswa,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Nilai ${r.mapelSelesai}/${r.totalMapel} mapel',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: r.isSiap ? kBrandSoft : kField,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    r.status,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: r.isSiap ? kBrand : kMuted,
+                    ),
+                  ),
+                ),
+                // Popup menu: tombol titik tiga.
+                PopupMenuButton<String>(
+                  tooltip: 'Aksi rapor ${r.namaSiswa}',
+                  onSelected: (v) => _jalankan(v, r),
+                  itemBuilder: (_) => _itemMenu(),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<PopupMenuEntry<String>> _itemMenu() => const [
+    PopupMenuItem(value: 'preview', child: Text('Pratinjau')),
+    PopupMenuItem(value: 'qr', child: Text('QR-Code')),
+    PopupMenuItem(value: 'unggah', child: Text('Unggah bukti fisik')),
+    PopupMenuItem(value: 'lihat', child: Text('Lihat bukti fisik')),
+  ];
+
+  Future<void> _menuTekanLama(Offset p, DataRaporModel r) async {
+    final v = await showMenu<String>(
+      context: context,
+      position: RelativeRect.fromLTRB(p.dx, p.dy, p.dx + 1, p.dy + 1),
+      items: _itemMenu(),
+    );
+    if (v != null) _jalankan(v, r);
+  }
+
+  void _jalankan(String aksi, DataRaporModel r) {
+    switch (aksi) {
+      case 'preview':
+        _pratinjau(r);
+      case 'qr':
+        _qr(r);
+      case 'unggah':
+        _unggahBukti(r);
+      case 'lihat':
+        _lihatBukti(r);
+    }
+  }
+
+  void _pratinjau(DataRaporModel r) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(r.namaSiswa, style: Theme.of(ctx).textTheme.titleLarge),
+            Text(
+              'NISN ${r.nisn}, kelas ${r.kelas}, semester ${_labelSemester(r.semester)}',
+              style: Theme.of(ctx).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 16),
+            _baris(
+              'Nilai terisi',
+              '${r.mapelSelesai} dari ${r.totalMapel} mapel',
+            ),
+            _baris('Status', r.status),
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: () {
+                Navigator.pop(ctx);
+                _qr(r);
+              },
+              icon: const Icon(Icons.qr_code_2, size: 20),
+              label: const Text('QR-Code'),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: () {
+                Navigator.pop(ctx);
+                _unggahBukti(r);
+              },
+              icon: const Icon(Icons.camera_alt_outlined, size: 20),
+              label: const Text('Unggah bukti fisik'),
+            ),
+            const SizedBox(height: 8),
+            FilledButton.icon(
+              onPressed: () {
+                Navigator.pop(ctx);
+                _lihatBukti(r);
+              },
+              icon: const Icon(Icons.image_outlined, size: 20),
+              label: const Text('Lihat bukti fisik'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _baris(String label, String nilai) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: const TextStyle(color: kMuted)),
+        Flexible(
+          child: Text(
+            nilai,
+            textAlign: TextAlign.end,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  /// QR berisi identitas rapor (NISN, kelas, semester) untuk dicetak atau
+  /// dipindai. Tidak ada server verifikasi, jadi QR ini bukan tanda keaslian.
+  void _qr(DataRaporModel r) {
+    final isi = 'ALFAJAR|RAPOR|${r.nisn}|${r.kelas}|${r.semester}';
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.qr_code_2, color: kBrand, size: 26),
-            SizedBox(width: 8),
-            Text('QR-Code Validasi Rapor'),
-          ],
-        ),
+        title: const Text('QR-Code Rapor'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              item.namaSiswa,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-            ),
-            Text('NISN: ${item.nisn} · Kelas ${item.kelas}',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-            const SizedBox(height: 16),
-            // Tampilan widget QR-Code
-            QrCodeWidget(
-              data: payload,
-              size: 190,
-              color: const Color(0xFF0D5C3A),
+              r.namaSiswa,
+              style: const TextStyle(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                'Scan QR ini untuk memverifikasi keaslian lembar rapor siswa pada sistem MTs Al Fajar.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
-              ),
+            QrCodeWidget(data: isi, size: 200, color: kBrand),
+            const SizedBox(height: 12),
+            Text(
+              'Berisi NISN, kelas, dan semester rapor ini.',
+              textAlign: TextAlign.center,
+              style: Theme.of(ctx).textTheme.bodySmall,
             ),
           ],
         ),
         actions: [
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: kBrand),
+          TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Tutup'),
           ),
@@ -621,293 +520,73 @@ class _AdminDataRaporScreenState extends ConsumerState<AdminDataRaporScreen> {
     );
   }
 
-  /// [Kamera (1%)] & [Gallery (1%)]: Unggah bukti fisik lembar nilai siswa
-  void _unggahDokumenFisik(BuildContext context, DataRaporModel item) {
+  void _unggahBukti(DataRaporModel r) {
     MediaPickerDialog.show(
       context,
-      title: 'Unggah Bukti Fisik Lembar Rapor',
-      studentName: item.namaSiswa,
-      onMediaSelected: (source, fileName) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                '[$source] Berhasil memilih berkas $fileName. Mengunggah ke Supabase Storage bucket "rapor-bukti"...'),
-          ),
+      title: 'Bukti fisik rapor',
+      studentName: r.namaSiswa,
+      onPicked: (file) async {
+        final bytes = await file.readAsBytes();
+        if (!mounted) return;
+        await simpan(
+          context,
+          () => ref
+              .read(adminRepositoryProvider)
+              .unggahBuktiRapor(
+                siswaId: int.parse(r.id),
+                semester: r.semester,
+                bytes: bytes,
+                mime: mimeGambar(file),
+              ),
+          'Bukti fisik ${r.namaSiswa} tersimpan.',
         );
       },
     );
   }
 
-  /// [Database Sqlite (Bobot 1%)]: Simpan seluruh data rapor ke tabel SQLite lokal
-  Future<void> _sinkronisasiKeSqlite(BuildContext context) async {
-    final dataSqlite = _daftarRapor
-        .map((r) => {
-              'id': r.id,
-              'nama_siswa': r.namaSiswa,
-              'nisn': r.nisn,
-              'kelas': r.kelas,
-              'semester': r.semester,
-              'mapel_selesai': r.mapelSelesai,
-              'total_mapel': r.totalMapel,
-              'status': r.status,
-            })
-        .toList();
-
-    await SqliteOfflineService().simpanRaporKeSqlite(dataSqlite);
-
-    if (!mounted) return;
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.storage, color: kBrand),
-            SizedBox(width: 8),
-            Text('Database SQLite Lokal'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Sinkronisasi Offline Berhasil!',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Sebanyak ${dataSqlite.length} data rapor kelas $_selectedKelas telah tersimpan di tabel SQLite lokal "rapor_offline".',
-              style: const TextStyle(fontSize: 13),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Text(
-                'Tabel: rapor_offline\nDriver: SQLite Engine Local\nStatus: Cache Sinkron Siap Digunakan Tanpa Internet',
-                style: TextStyle(fontSize: 11, fontFamily: 'monospace'),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: kBrand),
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// [Supabase Storage (Bobot 7%)]: Menghubungkan unduhan file ke Supabase Storage Bucket
-  void _unduhDariSupabaseStorage(BuildContext context, DataRaporModel item) {
+  Future<void> _lihatBukti(DataRaporModel r) async {
+    final messenger = ScaffoldMessenger.of(context);
+    String? url;
     try {
-      final supabase = Supabase.instance.client;
-      // Membaca URL publik berkas rapor dari bucket 'rapor' di Supabase Storage
-      final fileUrl = supabase.storage
-          .from('rapor')
-          .getPublicUrl('${item.kelas}/${item.nisn}_rapor.pdf');
-
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Row(
-            children: [
-              Icon(Icons.cloud_done, color: kBrand),
-              SizedBox(width: 8),
-              Text('Supabase Storage'),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Berkas rapor ananda ${item.namaSiswa} siap diunduh.'),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  'Bucket: rapor\nPath: ${item.kelas}/${item.nisn}_rapor.pdf\nURL: $fileUrl',
-                  style: const TextStyle(
-                      fontSize: 11, fontFamily: 'monospace'),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Tutup'),
-            ),
-            FilledButton.icon(
-              style: FilledButton.styleFrom(backgroundColor: kBrand),
-              onPressed: () {
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                        'Mengunduh berkas rapor ${item.namaSiswa} dari Supabase Storage...'),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.download, size: 18),
-              label: const Text('Unduh Sekarang'),
-            ),
-          ],
-        ),
+      url = await ref
+          .read(adminRepositoryProvider)
+          .urlBuktiRapor(siswaId: int.parse(r.id), semester: r.semester);
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(AppException.from(e).message)),
       );
-    } catch (_) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-              'Supabase Storage: Menyiapkan berkas rapor ${item.namaSiswa}...'),
-        ),
-      );
+      return;
     }
-  }
-
-  void _previewRaporSiswa(BuildContext context, DataRaporModel item) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Rapor Siswa - Kelas $_selectedKelas',
-                  style: const TextStyle(
-                    fontSize: 15.5,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              item.namaSiswa,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1E293B),
-              ),
-            ),
-            Text(
-              'NISN: ${item.nisn} · Semester $_selectedSemester',
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-            ),
-            const Divider(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Kelengkapan Nilai:'),
-                Text(
-                  '${item.mapelSelesai}/${item.totalMapel} Mata Pelajaran',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Status Rapor:'),
-                Text(
-                  item.status,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: item.isSiap
-                        ? const Color(0xFF166534)
-                        : const Color(0xFFB45309),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            // Tombol QR-Code Verifikasi
-            OutlinedButton.icon(
-              onPressed: () {
-                Navigator.pop(ctx);
-                _tampilkanQrValidasi(context, item);
-              },
-              icon: const Icon(Icons.qr_code, size: 18),
-              label: const Text('Tampilkan QR-Code Validasi'),
-            ),
-            const SizedBox(height: 8),
-            // Tombol Kamera/Galeri Bukti Fisik
-            OutlinedButton.icon(
-              onPressed: () {
-                Navigator.pop(ctx);
-                _unggahDokumenFisik(context, item);
-              },
-              icon: const Icon(Icons.camera_alt_outlined, size: 18),
-              label: const Text('Unggah Bukti Fisik (Kamera / Galeri)'),
-            ),
-            const SizedBox(height: 12),
-            FilledButton.icon(
-              style: FilledButton.styleFrom(backgroundColor: kBrand),
-              onPressed: () {
-                Navigator.pop(ctx);
-                _unduhDariSupabaseStorage(context, item);
-              },
-              icon: const Icon(Icons.cloud_download, size: 18),
-              label: const Text('Unduh Berkas via Supabase Storage (PDF)'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _cetakRaporMasal(BuildContext context) {
-    final count = _selectedIds.isEmpty ? _filteredRapor.length : _selectedIds.length;
+    if (!mounted) return;
+    if (url == null) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Belum ada bukti fisik untuk ${r.namaSiswa}.')),
+      );
+      return;
+    }
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Cetak Rapor Kelas'),
-        content: Text(
-          'Mencetak rapor untuk $count siswa di Kelas $_selectedKelas Semester $_selectedSemester.\n\nBerkas PDF akan disimpan dan diunduh langsung dari Supabase Storage.',
+        title: Text('Bukti fisik ${r.namaSiswa}'),
+        content: ClipRRect(
+          borderRadius: BorderRadius.circular(kRadiusControl),
+          child: Image.network(
+            url!,
+            fit: BoxFit.contain,
+            loadingBuilder: (_, child, p) => p == null
+                ? child
+                : const SizedBox(
+                    height: 160,
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+            errorBuilder: (_, _, _) =>
+                const Text('Gambar tidak bisa ditampilkan.'),
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
-          ),
-          FilledButton.icon(
-            style: FilledButton.styleFrom(backgroundColor: kBrand),
-            onPressed: () {
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'Mengunduh gabungan $count lembar rapor Kelas $_selectedKelas dari Supabase Storage...',
-                  ),
-                ),
-              );
-            },
-            icon: const Icon(Icons.download, size: 18),
-            label: const Text('Cetak & Unduh'),
+            child: const Text('Tutup'),
           ),
         ],
       ),

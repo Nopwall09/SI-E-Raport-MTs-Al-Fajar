@@ -320,18 +320,7 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
             const SizedBox(height: 10),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: CircleAvatar(
-                radius: 26,
-                backgroundColor: brandColor.withValues(alpha: 0.12),
-                child: Text(
-                  siswa.nama[0],
-                  style: TextStyle(
-                    color: brandColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 22,
-                  ),
-                ),
-              ),
+              leading: _FotoSiswa(siswa: siswa),
               title: Text(
                 siswa.nama,
                 style: const TextStyle(
@@ -366,8 +355,10 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
                       _showQrKartuSiswa(context, siswa);
                     },
                     icon: const Icon(Icons.qr_code, size: 16),
-                    label: const Text('Kartu Pelajar QR',
-                        style: TextStyle(fontSize: 12)),
+                    label: const Text(
+                      'Kartu Pelajar QR',
+                      style: TextStyle(fontSize: 12),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -381,8 +372,10 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
                       _uploadFotoSiswa(context, siswa);
                     },
                     icon: const Icon(Icons.camera_alt_outlined, size: 16),
-                    label: const Text('Foto (Kamera/Galeri)',
-                        style: TextStyle(fontSize: 12)),
+                    label: const Text(
+                      'Foto (Kamera/Galeri)',
+                      style: TextStyle(fontSize: 12),
+                    ),
                   ),
                 ),
               ],
@@ -420,7 +413,7 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
   }
 
   void _showQrKartuSiswa(BuildContext context, SiswaModel siswa) {
-    final payload = 'ALFAJAR-SISWA-${siswa.nisn}-${siswa.kelas}-VALID';
+    final payload = 'ALFAJAR|SISWA|${siswa.nis}|${siswa.kelas}';
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -438,10 +431,16 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
               siswa.nama,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
-            Text('NIS: ${siswa.nis} · NISN: ${siswa.nisn} · Kelas ${siswa.kelas}',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+            Text(
+              'NIS: ${siswa.nis} · NISN: ${siswa.nisn} · Kelas ${siswa.kelas}',
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            ),
             const SizedBox(height: 16),
-            QrCodeWidget(data: payload, size: 180, color: const Color(0xFF0D5C3A)),
+            QrCodeWidget(
+              data: payload,
+              size: 180,
+              color: const Color(0xFF0D5C3A),
+            ),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(8),
@@ -450,7 +449,7 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
                 borderRadius: BorderRadius.circular(6),
               ),
               child: const Text(
-                'Scan QR-Code untuk verifikasi identitas siswa resmi MTs Al Fajar Kandat.',
+                'Berisi NIS dan kelas siswa.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 11),
               ),
@@ -471,14 +470,17 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
   void _uploadFotoSiswa(BuildContext context, SiswaModel siswa) {
     MediaPickerDialog.show(
       context,
-      title: 'Pilih Sumber Foto Profil Siswa',
+      title: 'Foto profil siswa',
       studentName: siswa.nama,
-      onMediaSelected: (source, fileName) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                '[$source] Berhasil memilih berkas $fileName. Mengunggah ke Supabase Storage bucket "foto-siswa"...'),
-          ),
+      onPicked: (file) async {
+        final bytes = await file.readAsBytes();
+        if (!context.mounted) return;
+        await simpan(
+          context,
+          () => ref
+              .read(adminRepositoryProvider)
+              .unggahFotoSiswa(int.parse(siswa.id), bytes, mimeGambar(file)),
+          'Foto ${siswa.nama} tersimpan.',
         );
       },
     );
@@ -737,6 +739,62 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Foto profil dari Supabase Storage. Inisial nama jadi lapisan bawah, jadi
+/// tetap tampil bila siswa belum punya foto atau gambar gagal dimuat.
+class _FotoSiswa extends ConsumerStatefulWidget {
+  const _FotoSiswa({required this.siswa});
+
+  final SiswaModel siswa;
+
+  @override
+  ConsumerState<_FotoSiswa> createState() => _FotoSiswaState();
+}
+
+class _FotoSiswaState extends ConsumerState<_FotoSiswa> {
+  late final Future<String?> _url = ref
+      .read(adminRepositoryProvider)
+      .urlFotoSiswa(int.parse(widget.siswa.id))
+      .catchError((_) => null);
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 52,
+      height: 52,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          CircleAvatar(
+            backgroundColor: kBrandSoft,
+            child: Text(
+              widget.siswa.nama.isEmpty ? '?' : widget.siswa.nama[0],
+              style: const TextStyle(
+                color: kBrand,
+                fontWeight: FontWeight.bold,
+                fontSize: 22,
+              ),
+            ),
+          ),
+          FutureBuilder<String?>(
+            future: _url,
+            builder: (context, snap) {
+              final url = snap.data;
+              if (url == null) return const SizedBox.shrink();
+              return ClipOval(
+                child: Image.network(
+                  url,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }

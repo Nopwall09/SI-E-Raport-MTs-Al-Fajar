@@ -1,164 +1,131 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+
 import '../app/theme.dart';
 
-/// [Kamera (Bobot 1%)] & [Gallery (Bobot 1%)]: Dialog pemilih foto & dokumen fisik
-class MediaPickerDialog extends StatefulWidget {
-  final String title;
-  final String studentName;
-  final Function(String source, String fileName) onMediaSelected;
+/// Tipe konten dari ekstensi berkas gambar (kamera biasanya jpg).
+String mimeGambar(XFile f) {
+  final nama = f.name.toLowerCase();
+  if (nama.endsWith('.png')) return 'image/png';
+  if (nama.endsWith('.webp')) return 'image/webp';
+  return 'image/jpeg';
+}
 
+/// Sheet pemilih sumber foto: kamera atau galeri. Foto dipilih sungguhan lewat
+/// image_picker, lalu [onPicked] menerima berkasnya. Bila dibatalkan, tidak
+/// dipanggil.
+class MediaPickerDialog extends StatelessWidget {
   const MediaPickerDialog({
     super.key,
     required this.title,
     required this.studentName,
-    required this.onMediaSelected,
+    required this.onPicked,
   });
+
+  final String title;
+  final String studentName;
+  final Future<void> Function(XFile file) onPicked;
 
   static Future<void> show(
     BuildContext context, {
     required String title,
     required String studentName,
-    required Function(String source, String fileName) onMediaSelected,
+    required Future<void> Function(XFile file) onPicked,
   }) {
     return showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => MediaPickerDialog(
+      builder: (_) => MediaPickerDialog(
         title: title,
         studentName: studentName,
-        onMediaSelected: onMediaSelected,
+        onPicked: onPicked,
       ),
     );
   }
 
-  @override
-  State<MediaPickerDialog> createState() => _MediaPickerDialogState();
-}
+  Future<void> _ambil(BuildContext context, ImageSource sumber) async {
+    final messenger = ScaffoldMessenger.of(context);
+    Navigator.pop(context);
+    try {
+      final file = await ImagePicker().pickImage(
+        source: sumber,
+        maxWidth: 1600,
+        imageQuality: 85,
+      );
+      if (file == null) return;
+      await onPicked(file);
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Tidak bisa membuka kamera atau galeri.')),
+      );
+    }
+  }
 
-class _MediaPickerDialogState extends State<MediaPickerDialog> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+        padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  widget.title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
+            Text(title, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 4),
             Text(
-              'Dokumen/Foto untuk: ${widget.studentName}',
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+              'Untuk: $studentName',
+              style: Theme.of(context).textTheme.bodySmall,
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 16),
             Row(
               children: [
-                // [Kamera (1%)]: Ambil foto lewat kamera
                 Expanded(
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () {
-                      Navigator.pop(context);
-                      final fileName = 'foto_kamera_${DateTime.now().millisecondsSinceEpoch}.jpg';
-                      widget.onMediaSelected('Kamera', fileName);
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 20),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
-                      child: Column(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: kBrand.withOpacity(0.12),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.camera_alt, color: kBrand, size: 28),
-                          ),
-                          const SizedBox(height: 10),
-                          const Text(
-                            'Kamera',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Ambil foto langsung',
-                            style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
-                          ),
-                        ],
-                      ),
-                    ),
+                  child: _Sumber(
+                    icon: Icons.camera_alt_outlined,
+                    label: 'Kamera',
+                    onTap: () => _ambil(context, ImageSource.camera),
                   ),
                 ),
-                const SizedBox(width: 14),
-
-                // [Gallery (1%)]: Pilih foto dari Galeri HP
+                const SizedBox(width: 12),
                 Expanded(
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () {
-                      Navigator.pop(context);
-                      final fileName = 'dokumen_galeri_${DateTime.now().millisecondsSinceEpoch}.png';
-                      widget.onMediaSelected('Gallery', fileName);
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 20),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
-                      child: Column(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF2563EB).withOpacity(0.12),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.photo_library, color: Color(0xFF2563EB), size: 28),
-                          ),
-                          const SizedBox(height: 10),
-                          const Text(
-                            'Gallery',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Pilih dari galeri foto',
-                            style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
-                          ),
-                        ],
-                      ),
-                    ),
+                  child: _Sumber(
+                    icon: Icons.photo_library_outlined,
+                    label: 'Galeri',
+                    onTap: () => _ambil(context, ImageSource.gallery),
                   ),
                 ),
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Sumber extends StatelessWidget {
+  const _Sumber({required this.icon, required this.label, required this.onTap});
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: kField,
+      borderRadius: BorderRadius.circular(kRadiusCard),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(kRadiusCard),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            children: [
+              Icon(icon, color: kBrand, size: 28),
+              const SizedBox(height: 8),
+              Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+            ],
+          ),
         ),
       ),
     );

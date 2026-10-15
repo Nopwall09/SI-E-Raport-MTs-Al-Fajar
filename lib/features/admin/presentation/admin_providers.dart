@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/config/env.dart';
 import '../../../core/providers.dart';
 import '../../../models/dashboard_model.dart';
+import '../../../models/data_rapor_model.dart';
 import '../../../models/guru_model.dart';
 import '../../../models/kelas_model.dart';
 import '../../../models/siswa_model.dart';
@@ -46,6 +47,20 @@ final adminKelasProvider = FutureProvider<List<KelasModel>>(
 final adminPenggunaProvider = FutureProvider<List<UserModel>>(
   (ref) => ref.watch(adminRepositoryProvider).daftarPengguna(),
 );
+
+final adminRaporProvider =
+    FutureProvider.family<
+      List<DataRaporModel>,
+      ({int kelasId, String kelasNama, String semester})
+    >(
+      (ref, k) => ref
+          .watch(adminRepositoryProvider)
+          .daftarRapor(
+            kelasId: k.kelasId,
+            kelasNama: k.kelasNama,
+            semester: k.semester,
+          ),
+    );
 
 final opsiKelasProvider = FutureProvider<List<Opsi>>(
   (ref) => ref.watch(adminRepositoryProvider).opsiKelas(),
