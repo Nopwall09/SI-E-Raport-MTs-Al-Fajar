@@ -15,6 +15,16 @@ class AdminMataPelajaranScreen extends ConsumerStatefulWidget {
 
 class _AdminMataPelajaranScreenState
     extends ConsumerState<AdminMataPelajaranScreen> {
+  final List<String> _daftarNamaGuru = [
+    'Ust. Zulkifli, S.Pd.I',
+    'Ust. M. Rasyid, Lc',
+    'Ust. Ahmad Fauzi, S.Pd.I',
+    'Ibu Nur Azizah, S.Pd',
+    'Ibu Siti Rahma, S.Si',
+    'Bpk. Hendra Wijaya, M.Pd',
+    'Ibu Ratna Dewi, S.Pd',
+  ];
+
   final List<MapelModel> _daftarMapel = [
     const MapelModel(
       id: '1',
@@ -121,64 +131,197 @@ class _AdminMataPelajaranScreenState
     );
   }
 
+  /// [FrameLayout (Stack)] & [ContextMenu (onLongPress)] & [PopupMenu (PopupMenuButton)]
   Widget _buildMapelCard(MapelModel item) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.shade300, width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(10),
-          onTap: () => _showMapelDetail(context, item),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+    return GestureDetector(
+      // [ContextMenu]: Membuka floating context menu saat user menekan lama pada kartu
+      onLongPressStart: (details) =>
+          _showFloatingContextMenu(context, details.globalPosition, item),
+      child: Stack(
+        // [FrameLayout]: Menggunakan Stack & Positioned untuk menyusun elemen overlay
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.grey.shade300, width: 1.2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(10),
+                onTap: () => _showMapelDetail(context, item),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  child: Row(
                     children: [
-                      Text(
-                        item.nama,
-                        style: const TextStyle(
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1E293B),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item.nama,
+                              style: const TextStyle(
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1E293B),
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              'Guru pengampu: ${item.guruPengampu}',
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                color: Colors.grey.shade600,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 3),
-                      Text(
-                        'Guru pengampu: ${item.guruPengampu}',
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          color: Colors.grey.shade600,
-                          fontWeight: FontWeight.w500,
-                        ),
+                      // [PopupMenu]: Tombol titik tiga dengan aksi cepat
+                      PopupMenuButton<String>(
+                        icon: const Icon(Icons.more_vert, size: 20),
+                        tooltip: 'Pilihan Mapel',
+                        onSelected: (val) {
+                          if (val == 'detail') {
+                            _showMapelDetail(context, item);
+                          } else if (val == 'hapus') {
+                            _konfirmasiHapusMapel(context, item);
+                          } else if (val == 'edit') {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Edit mapel ${item.nama}...'),
+                              ),
+                            );
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(
+                            value: 'detail',
+                            child: Row(
+                              children: [
+                                Icon(Icons.info_outline, size: 18),
+                                SizedBox(width: 8),
+                                Text('Lihat Detail'),
+                              ],
+                            ),
+                          ),
+                          const PopupMenuItem(
+                            value: 'edit',
+                            child: Row(
+                              children: [
+                                Icon(Icons.edit_outlined, size: 18),
+                                SizedBox(width: 8),
+                                Text('Edit Mapel'),
+                              ],
+                            ),
+                          ),
+                          const PopupMenuItem(
+                            value: 'hapus',
+                            child: Row(
+                              children: [
+                                Icon(Icons.delete_outline,
+                                    size: 18, color: Colors.red),
+                                SizedBox(width: 8),
+                                Text('Hapus',
+                                    style: TextStyle(color: Colors.red)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.chevron_right,
+                        size: 20,
+                        color: Colors.grey.shade400,
                       ),
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.chevron_right,
-                  size: 20,
-                  color: Colors.grey.shade400,
-                ),
-              ],
+              ),
             ),
           ),
-        ),
+          // [FrameLayout Overlay / Positioned]
+          Positioned(
+            top: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: const BorderRadius.only(
+                  topRight: Radius.circular(10),
+                  bottomLeft: Radius.circular(8),
+                ),
+                border: Border.all(color: Colors.grey.shade300, width: 0.8),
+              ),
+              child: Text(
+                item.kode,
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF475569),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
+  }
+
+  /// [ContextMenu]: Muncul saat pengguna menekan lama (Long Press) pada item
+  void _showFloatingContextMenu(
+      BuildContext context, Offset position, MapelModel item) {
+    showMenu<String>(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        position.dx,
+        position.dy,
+        position.dx + 1,
+        position.dy + 1,
+      ),
+      items: [
+        PopupMenuItem(
+          value: 'detail',
+          child: Row(
+            children: [
+              const Icon(Icons.description_outlined, size: 18),
+              const SizedBox(width: 8),
+              Text('Detail: ${item.nama}'),
+            ],
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'jadwal',
+          child: Row(
+            children: [
+              Icon(Icons.schedule, size: 18),
+              SizedBox(width: 8),
+              Text('Atur Jadwal Pelajaran'),
+            ],
+          ),
+        ),
+      ],
+    ).then((val) {
+      if (val == 'detail') {
+        _showMapelDetail(context, item);
+      } else if (val == 'jadwal') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Atur jadwal untuk ${item.nama}')),
+        );
+      }
+    });
   }
 
   void _showMapelDetail(BuildContext context, MapelModel item) {
@@ -223,7 +366,8 @@ class _AdminMataPelajaranScreenState
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Membuka penugasan kelas mapel ${item.nama}...'),
+                    content:
+                        Text('Membuka penugasan kelas mapel ${item.nama}...'),
                   ),
                 );
               },
@@ -242,7 +386,8 @@ class _AdminMataPelajaranScreenState
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+          Text(label,
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
           Text(
             value,
             style: const TextStyle(
@@ -256,11 +401,40 @@ class _AdminMataPelajaranScreenState
     );
   }
 
+  void _konfirmasiHapusMapel(BuildContext context, MapelModel item) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Hapus Mata Pelajaran'),
+        content: Text('Yakin ingin menghapus ${item.nama}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () {
+              setState(() => _daftarMapel.removeWhere((m) => m.id == item.id));
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Mapel ${item.nama} telah dihapus.')),
+              );
+            },
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Form Tambah Mapel: Memuat [AutoCompleteTextView], [TimePickerDialog], & [RadioButton]
   void _showAddMapelSheet(BuildContext context) {
     final namaCtrl = TextEditingController();
     final kodeCtrl = TextEditingController();
-    final guruCtrl = TextEditingController();
-    String kategori = 'Umum';
+    String selectedGuru = '';
+    TimeOfDay selectedJam = const TimeOfDay(hour: 7, minute: 30);
+    String selectedKategori = 'Agama';
 
     showModalBottomSheet(
       context: context,
@@ -277,113 +451,222 @@ class _AdminMataPelajaranScreenState
             right: 20,
             bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Tambah Mata Pelajaran',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Tambah Mata Pelajaran',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: kodeCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Kode Mapel',
+                    hintText: 'Contoh: IPA, MTK, FQ',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(ctx),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: kodeCtrl,
-                decoration: InputDecoration(
-                  labelText: 'Kode Mapel',
-                  hintText: 'Contoh: IPA, MTK, FQ',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: namaCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Nama Mata Pelajaran',
+                    hintText: 'Contoh: Ilmu Pengetahuan Alam',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: namaCtrl,
-                decoration: InputDecoration(
-                  labelText: 'Nama Mata Pelajaran',
-                  hintText: 'Contoh: Ilmu Pengetahuan Alam',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                const SizedBox(height: 12),
+
+                // [AutoCompleteTextView]: Auto-suggest nama guru pengampu saat diketik
+                const Text(
+                  'Guru Pengampu (Auto-Complete):',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                 ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: guruCtrl,
-                decoration: InputDecoration(
-                  labelText: 'Guru Pengampu Utama',
-                  hintText: 'Contoh: Ust. Zulkifli, S.Pd.I',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              DropdownButtonFormField<String>(
-                value: kategori,
-                decoration: InputDecoration(
-                  labelText: 'Kategori Mapel',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                items: const [
-                  DropdownMenuItem(value: 'Agama', child: Text('Pendidikan Agama Islam')),
-                  DropdownMenuItem(value: 'Umum', child: Text('Mata Pelajaran Umum')),
-                  DropdownMenuItem(value: 'Bahasa', child: Text('Bahasa')),
-                  DropdownMenuItem(value: 'Mulok', child: Text('Muatan Lokal')),
-                ],
-                onChanged: (val) {
-                  if (val != null) setModalState(() => kategori = val);
-                },
-              ),
-              const SizedBox(height: 18),
-              FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: kBrand,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                onPressed: () {
-                  if (namaCtrl.text.trim().isEmpty || kodeCtrl.text.trim().isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Kode dan Nama Mapel wajib diisi.')),
-                    );
-                    return;
-                  }
-                  setState(() {
-                    _daftarMapel.insert(
-                      0,
-                      MapelModel(
-                        id: DateTime.now().millisecondsSinceEpoch.toString(),
-                        kode: kodeCtrl.text.trim().toUpperCase(),
-                        nama: namaCtrl.text.trim(),
-                        guruPengampu: guruCtrl.text.trim().isNotEmpty
-                            ? guruCtrl.text.trim()
-                            : 'Belum ditentukan',
-                        kategori: kategori,
+                const SizedBox(height: 4),
+                Autocomplete<String>(
+                  optionsBuilder: (TextEditingValue textEditingValue) {
+                    if (textEditingValue.text.isEmpty) {
+                      return const Iterable<String>.empty();
+                    }
+                    return _daftarNamaGuru.where((String option) {
+                      return option
+                          .toLowerCase()
+                          .contains(textEditingValue.text.toLowerCase());
+                    });
+                  },
+                  onSelected: (String selection) {
+                    selectedGuru = selection;
+                  },
+                  fieldViewBuilder:
+                      (context, controller, focusNode, onFieldSubmitted) {
+                    return TextField(
+                      controller: controller,
+                      focusNode: focusNode,
+                      decoration: InputDecoration(
+                        hintText: 'Ketik nama guru pengampu...',
+                        prefixIcon: const Icon(Icons.person_search, size: 20),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
+                      onChanged: (val) => selectedGuru = val,
                     );
-                  });
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Mapel ${namaCtrl.text.trim()} berhasil ditambahkan.')),
-                  );
-                },
-                child: const Text('Simpan Mata Pelajaran', style: TextStyle(fontWeight: FontWeight.bold)),
-              ),
-            ],
+                  },
+                ),
+
+                const SizedBox(height: 14),
+
+                // [TimePickerDialog]: Memilih jam mulai pelajaran
+                InkWell(
+                  onTap: () async {
+                    // Panggilan TimePickerDialog resmi Flutter
+                    final picked = await showTimePicker(
+                      context: context,
+                      initialTime: selectedJam,
+                    );
+                    if (picked != null) {
+                      setModalState(() => selectedJam = picked);
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.access_time,
+                                size: 20, color: kBrand),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Jam Pelajaran: ${selectedJam.format(context)}',
+                              style: const TextStyle(
+                                  fontSize: 13.5, fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                        const Text(
+                          'Pilih Jam',
+                          style: TextStyle(
+                              color: kBrand,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12.5),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 14),
+
+                // [RadioButton]: Memilih Kategori Mapel secara eksklusif
+                const Text(
+                  'Kategori Mapel (RadioButton):',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                ),
+                RadioListTile<String>(
+                  title: const Text('Pendidikan Agama Islam (Agama)'),
+                  value: 'Agama',
+                  groupValue: selectedKategori,
+                  activeColor: kBrand,
+                  contentPadding: EdgeInsets.zero,
+                  onChanged: (val) {
+                    if (val != null) {
+                      setModalState(() => selectedKategori = val);
+                    }
+                  },
+                ),
+                RadioListTile<String>(
+                  title: const Text('Mata Pelajaran Umum'),
+                  value: 'Umum',
+                  groupValue: selectedKategori,
+                  activeColor: kBrand,
+                  contentPadding: EdgeInsets.zero,
+                  onChanged: (val) {
+                    if (val != null) {
+                      setModalState(() => selectedKategori = val);
+                    }
+                  },
+                ),
+                RadioListTile<String>(
+                  title: const Text('Bahasa'),
+                  value: 'Bahasa',
+                  groupValue: selectedKategori,
+                  activeColor: kBrand,
+                  contentPadding: EdgeInsets.zero,
+                  onChanged: (val) {
+                    if (val != null) {
+                      setModalState(() => selectedKategori = val);
+                    }
+                  },
+                ),
+
+                const SizedBox(height: 18),
+                FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: kBrand,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: () {
+                    if (namaCtrl.text.trim().isEmpty ||
+                        kodeCtrl.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Kode dan Nama Mapel wajib diisi.')),
+                      );
+                      return;
+                    }
+                    setState(() {
+                      _daftarMapel.insert(
+                        0,
+                        MapelModel(
+                          id: DateTime.now().millisecondsSinceEpoch.toString(),
+                          kode: kodeCtrl.text.trim().toUpperCase(),
+                          nama: namaCtrl.text.trim(),
+                          guruPengampu: selectedGuru.isNotEmpty
+                              ? selectedGuru
+                              : 'Belum ditentukan',
+                          kategori: selectedKategori,
+                        ),
+                      );
+                    });
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content: Text(
+                              'Mapel ${namaCtrl.text.trim()} berhasil ditambahkan.')),
+                    );
+                  },
+                  child: const Text('Simpan Mata Pelajaran',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
           ),
         ),
       ),
