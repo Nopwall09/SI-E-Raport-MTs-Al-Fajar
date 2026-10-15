@@ -214,65 +214,68 @@ class _AdminDataKelasScreenState extends ConsumerState<AdminDataKelasScreen> {
   ) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.white,
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Detail Kelas ${kelas.namaKelas}',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: kText,
+      builder: (ctx) => SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Detail Kelas ${kelas.namaKelas}',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: kText,
+                    ),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            _buildDetailRow('Tingkat', 'Kelas ${kelas.tingkat} (MTs)'),
-            _buildDetailRow('Wali Kelas', kelas.namaWali),
-            _buildDetailRow('Jumlah Siswa', '${kelas.jumlahSiswa} siswa'),
-            _buildDetailRow(
-              'Tahun Ajaran',
-              ref.read(tahunAjaranAktifProvider).valueOrNull?.label ?? '-',
-            ),
-            const SizedBox(height: 16),
-            AksiUbahHapus(
-              onUbah: () {
-                Navigator.pop(ctx);
-                _showKelasFormSheet(context, awal: kelas);
-              },
-              onHapus: () async {
-                final yakin = await konfirmasiHapus(
-                  ctx,
-                  judul: 'Hapus kelas ${kelas.namaKelas}?',
-                  isi:
-                      'Hanya kelas yang sudah tidak berisi siswa yang bisa dihapus.',
-                );
-                if (!yakin || !context.mounted) return;
-                final ok = await simpan(
-                  context,
-                  () => ref
-                      .read(adminRepositoryProvider)
-                      .hapusKelas(int.parse(kelas.id)),
-                  'Kelas ${kelas.namaKelas} dihapus.',
-                );
-                if (!ok) return;
-                _segarkan();
-                if (ctx.mounted) Navigator.pop(ctx);
-              },
-            ),
-          ],
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              _buildDetailRow('Tingkat', 'Kelas ${kelas.tingkat} (MTs)'),
+              _buildDetailRow('Wali Kelas', kelas.namaWali),
+              _buildDetailRow('Jumlah Siswa', '${kelas.jumlahSiswa} siswa'),
+              _buildDetailRow(
+                'Tahun Ajaran',
+                ref.read(tahunAjaranAktifProvider).valueOrNull?.label ?? '-',
+              ),
+              const SizedBox(height: 16),
+              AksiUbahHapus(
+                onUbah: () {
+                  Navigator.pop(ctx);
+                  _showKelasFormSheet(context, awal: kelas);
+                },
+                onHapus: () async {
+                  final yakin = await konfirmasiHapus(
+                    ctx,
+                    judul: 'Hapus kelas ${kelas.namaKelas}?',
+                    isi:
+                        'Hanya kelas yang sudah tidak berisi siswa yang bisa dihapus.',
+                  );
+                  if (!yakin || !context.mounted) return;
+                  final ok = await simpan(
+                    context,
+                    () => ref
+                        .read(adminRepositoryProvider)
+                        .hapusKelas(int.parse(kelas.id)),
+                    'Kelas ${kelas.namaKelas} dihapus.',
+                  );
+                  if (!ok) return;
+                  _segarkan();
+                  if (ctx.mounted) Navigator.pop(ctx);
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );

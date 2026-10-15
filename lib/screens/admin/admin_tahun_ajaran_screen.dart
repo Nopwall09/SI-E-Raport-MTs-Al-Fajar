@@ -144,69 +144,72 @@ class _AdminTahunAjaranScreenState
   void _detail(TahunAjaranModel t) {
     showModalBottomSheet(
       context: context,
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('TA ${t.tahun}', style: Theme.of(ctx).textTheme.titleLarge),
-            const SizedBox(height: 12),
-            _baris('Semester', t.semesterLabel),
-            _baris('Standar ketuntasan (SKM)', '${t.skm}'),
-            _baris('Status', t.isActive ? 'Aktif' : 'Tidak aktif'),
-            const SizedBox(height: 16),
-            if (!t.isActive) ...[
-              OutlinedButton.icon(
-                onPressed: () async {
-                  final yakin = await konfirmasiAksi(
+      isScrollControlled: true,
+      builder: (ctx) => SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('TA ${t.tahun}', style: Theme.of(ctx).textTheme.titleLarge),
+              const SizedBox(height: 12),
+              _baris('Semester', t.semesterLabel),
+              _baris('Standar ketuntasan (SKM)', '${t.skm}'),
+              _baris('Status', t.isActive ? 'Aktif' : 'Tidak aktif'),
+              const SizedBox(height: 16),
+              if (!t.isActive) ...[
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final yakin = await konfirmasiAksi(
+                      ctx,
+                      judul: 'Jadikan TA ${t.tahun} aktif?',
+                      isi:
+                          'Kelas, nilai, dan rapor yang tampil akan mengikuti tahun ajaran ini.',
+                      aksi: 'Aktifkan',
+                    );
+                    if (!yakin || !mounted) return;
+                    final ok = await simpan(
+                      context,
+                      () => ref
+                          .read(adminRepositoryProvider)
+                          .aktifkanTahunAjaran(int.parse(t.id)),
+                      'TA ${t.tahun} sekarang aktif.',
+                    );
+                    if (!ok) return;
+                    _segarkan();
+                    if (ctx.mounted) Navigator.pop(ctx);
+                  },
+                  icon: const Icon(Icons.check_circle_outline, size: 18),
+                  label: const Text('Jadikan aktif'),
+                ),
+                const SizedBox(height: 8),
+              ],
+              AksiUbahHapus(
+                onUbah: () {
+                  Navigator.pop(ctx);
+                  _form(context, awal: t);
+                },
+                onHapus: () async {
+                  final yakin = await konfirmasiHapus(
                     ctx,
-                    judul: 'Jadikan TA ${t.tahun} aktif?',
+                    judul: 'Hapus TA ${t.tahun}?',
                     isi:
-                        'Kelas, nilai, dan rapor yang tampil akan mengikuti tahun ajaran ini.',
-                    aksi: 'Aktifkan',
+                        'Tahun ajaran yang sudah punya kelas tidak bisa dihapus.',
                   );
                   if (!yakin || !mounted) return;
                   final ok = await simpan(
                     context,
-                    () => ref
-                        .read(adminRepositoryProvider)
-                        .aktifkanTahunAjaran(int.parse(t.id)),
-                    'TA ${t.tahun} sekarang aktif.',
+                    () => ref.read(adminRepositoryProvider).hapusTahunAjaran(t),
+                    'TA ${t.tahun} dihapus.',
                   );
                   if (!ok) return;
                   _segarkan();
                   if (ctx.mounted) Navigator.pop(ctx);
                 },
-                icon: const Icon(Icons.check_circle_outline, size: 18),
-                label: const Text('Jadikan aktif'),
               ),
-              const SizedBox(height: 8),
             ],
-            AksiUbahHapus(
-              onUbah: () {
-                Navigator.pop(ctx);
-                _form(context, awal: t);
-              },
-              onHapus: () async {
-                final yakin = await konfirmasiHapus(
-                  ctx,
-                  judul: 'Hapus TA ${t.tahun}?',
-                  isi:
-                      'Tahun ajaran yang sudah punya kelas tidak bisa dihapus.',
-                );
-                if (!yakin || !mounted) return;
-                final ok = await simpan(
-                  context,
-                  () => ref.read(adminRepositoryProvider).hapusTahunAjaran(t),
-                  'TA ${t.tahun} dihapus.',
-                );
-                if (!ok) return;
-                _segarkan();
-                if (ctx.mounted) Navigator.pop(ctx);
-              },
-            ),
-          ],
+          ),
         ),
       ),
     );

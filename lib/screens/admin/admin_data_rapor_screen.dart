@@ -418,51 +418,54 @@ class _AdminDataRaporScreenState extends ConsumerState<AdminDataRaporScreen> {
   void _pratinjau(DataRaporModel r) {
     showModalBottomSheet(
       context: context,
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(r.namaSiswa, style: Theme.of(ctx).textTheme.titleLarge),
-            Text(
-              'NISN ${r.nisn}, kelas ${r.kelas}, semester ${_labelSemester(r.semester)}',
-              style: Theme.of(ctx).textTheme.bodySmall,
-            ),
-            const SizedBox(height: 16),
-            _baris(
-              'Nilai terisi',
-              '${r.mapelSelesai} dari ${r.totalMapel} mapel',
-            ),
-            _baris('Status', r.status),
-            const SizedBox(height: 16),
-            OutlinedButton.icon(
-              onPressed: () {
-                Navigator.pop(ctx);
-                _qr(r);
-              },
-              icon: const Icon(Icons.qr_code_2, size: 20),
-              label: const Text('QR-Code'),
-            ),
-            const SizedBox(height: 8),
-            OutlinedButton.icon(
-              onPressed: () {
-                Navigator.pop(ctx);
-                _unggahBukti(r);
-              },
-              icon: const Icon(Icons.camera_alt_outlined, size: 20),
-              label: const Text('Unggah bukti fisik'),
-            ),
-            const SizedBox(height: 8),
-            FilledButton.icon(
-              onPressed: () {
-                Navigator.pop(ctx);
-                _lihatBukti(r);
-              },
-              icon: const Icon(Icons.image_outlined, size: 20),
-              label: const Text('Lihat bukti fisik'),
-            ),
-          ],
+      isScrollControlled: true,
+      builder: (ctx) => SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(r.namaSiswa, style: Theme.of(ctx).textTheme.titleLarge),
+              Text(
+                'NISN ${r.nisn}, kelas ${r.kelas}, semester ${_labelSemester(r.semester)}',
+                style: Theme.of(ctx).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 16),
+              _baris(
+                'Nilai terisi',
+                '${r.mapelSelesai} dari ${r.totalMapel} mapel',
+              ),
+              _baris('Status', r.status),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _qr(r);
+                },
+                icon: const Icon(Icons.qr_code_2, size: 20),
+                label: const Text('QR-Code'),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _unggahBukti(r);
+                },
+                icon: const Icon(Icons.camera_alt_outlined, size: 20),
+                label: const Text('Unggah bukti fisik'),
+              ),
+              const SizedBox(height: 8),
+              FilledButton.icon(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _lihatBukti(r);
+                },
+                icon: const Icon(Icons.image_outlined, size: 20),
+                label: const Text('Lihat bukti fisik'),
+              ),
+            ],
+          ),
         ),
       ),
     );

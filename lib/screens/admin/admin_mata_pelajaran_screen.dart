@@ -164,43 +164,46 @@ class _AdminMataPelajaranScreenState
   void _detail(MapelModel m) {
     showModalBottomSheet(
       context: context,
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(m.nama, style: Theme.of(ctx).textTheme.titleLarge),
-            const SizedBox(height: 12),
-            _baris('Kode', m.kode),
-            _baris('Pengampu', m.guruPengampu),
-            const SizedBox(height: 16),
-            AksiUbahHapus(
-              onUbah: () {
-                Navigator.pop(ctx);
-                _form(context, awal: m);
-              },
-              onHapus: () async {
-                final yakin = await konfirmasiHapus(
-                  ctx,
-                  judul: 'Hapus ${m.nama}?',
-                  isi:
-                      'Mata pelajaran yang sudah dipakai penugasan atau nilai tidak bisa dihapus.',
-                );
-                if (!yakin || !mounted) return;
-                final ok = await simpan(
-                  context,
-                  () => ref
-                      .read(adminRepositoryProvider)
-                      .hapusMapel(int.parse(m.id)),
-                  '${m.nama} dihapus.',
-                );
-                if (!ok) return;
-                _segarkan();
-                if (ctx.mounted) Navigator.pop(ctx);
-              },
-            ),
-          ],
+      isScrollControlled: true,
+      builder: (ctx) => SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(m.nama, style: Theme.of(ctx).textTheme.titleLarge),
+              const SizedBox(height: 12),
+              _baris('Kode', m.kode),
+              _baris('Pengampu', m.guruPengampu),
+              const SizedBox(height: 16),
+              AksiUbahHapus(
+                onUbah: () {
+                  Navigator.pop(ctx);
+                  _form(context, awal: m);
+                },
+                onHapus: () async {
+                  final yakin = await konfirmasiHapus(
+                    ctx,
+                    judul: 'Hapus ${m.nama}?',
+                    isi:
+                        'Mata pelajaran yang sudah dipakai penugasan atau nilai tidak bisa dihapus.',
+                  );
+                  if (!yakin || !mounted) return;
+                  final ok = await simpan(
+                    context,
+                    () => ref
+                        .read(adminRepositoryProvider)
+                        .hapusMapel(int.parse(m.id)),
+                    '${m.nama} dihapus.',
+                  );
+                  if (!ok) return;
+                  _segarkan();
+                  if (ctx.mounted) Navigator.pop(ctx);
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );

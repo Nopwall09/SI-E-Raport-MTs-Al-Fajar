@@ -293,120 +293,123 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
   ) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.white,
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Detail Siswa',
-                  style: TextStyle(
+      builder: (ctx) => SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Detail Siswa',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: kText,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: _FotoSiswa(siswa: siswa),
+                title: Text(
+                  siswa.nama,
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: kText,
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: _FotoSiswa(siswa: siswa),
-              title: Text(
-                siswa.nama,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+                subtitle: Text('NIS ${siswa.nis}'),
               ),
-              subtitle: Text('NIS ${siswa.nis}'),
-            ),
-            const Divider(),
-            _buildDetailRow('NISN', siswa.nisn),
-            _buildDetailRow('Kelas', siswa.kelas),
-            _buildDetailRow(
-              'Jenis Kelamin',
-              siswa.jenisKelamin == 'L' ? 'Laki-laki' : 'Perempuan',
-            ),
-            _buildDetailRow(
-              'Nama Orang Tua / Wali',
-              siswa.namaWali.isNotEmpty ? siswa.namaWali : 'Belum terhubung',
-            ),
-            const SizedBox(height: 12),
-            // [QR-Code (2%)] & [Kamera/Galeri (2%)]: Tombol Kartu Pelajar QR & Foto Profil
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                    ),
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      _showQrKartuSiswa(context, siswa);
-                    },
-                    icon: const Icon(Icons.qr_code, size: 16),
-                    label: const Text(
-                      'Kartu Pelajar QR',
-                      style: TextStyle(fontSize: 12),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                    ),
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      _uploadFotoSiswa(context, siswa);
-                    },
-                    icon: const Icon(Icons.camera_alt_outlined, size: 16),
-                    label: const Text(
-                      'Foto (Kamera/Galeri)',
-                      style: TextStyle(fontSize: 12),
+              const Divider(),
+              _buildDetailRow('NISN', siswa.nisn),
+              _buildDetailRow('Kelas', siswa.kelas),
+              _buildDetailRow(
+                'Jenis Kelamin',
+                siswa.jenisKelamin == 'L' ? 'Laki-laki' : 'Perempuan',
+              ),
+              _buildDetailRow(
+                'Nama Orang Tua / Wali',
+                siswa.namaWali.isNotEmpty ? siswa.namaWali : 'Belum terhubung',
+              ),
+              const SizedBox(height: 12),
+              // [QR-Code (2%)] & [Kamera/Galeri (2%)]: Tombol Kartu Pelajar QR & Foto Profil
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        _showQrKartuSiswa(context, siswa);
+                      },
+                      icon: const Icon(Icons.qr_code, size: 16),
+                      label: const Text(
+                        'Kartu Pelajar QR',
+                        style: TextStyle(fontSize: 12),
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            AksiUbahHapus(
-              onUbah: () {
-                Navigator.pop(ctx);
-                _showSiswaFormSheet(context, awal: siswa);
-              },
-              onHapus: () async {
-                final yakin = await konfirmasiHapus(
-                  ctx,
-                  judul: 'Hapus ${siswa.nama}?',
-                  isi:
-                      'Data siswa beserta nilai dan rapornya akan terhapus permanen.',
-                );
-                if (!yakin || !context.mounted) return;
-                final ok = await simpan(
-                  context,
-                  () => ref
-                      .read(adminRepositoryProvider)
-                      .hapusSiswa(int.parse(siswa.id)),
-                  'Siswa ${siswa.nama} dihapus.',
-                );
-                if (!ok) return;
-                _segarkan();
-                if (ctx.mounted) Navigator.pop(ctx);
-              },
-            ),
-          ],
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        _uploadFotoSiswa(context, siswa);
+                      },
+                      icon: const Icon(Icons.camera_alt_outlined, size: 16),
+                      label: const Text(
+                        'Foto (Kamera/Galeri)',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              AksiUbahHapus(
+                onUbah: () {
+                  Navigator.pop(ctx);
+                  _showSiswaFormSheet(context, awal: siswa);
+                },
+                onHapus: () async {
+                  final yakin = await konfirmasiHapus(
+                    ctx,
+                    judul: 'Hapus ${siswa.nama}?',
+                    isi:
+                        'Data siswa beserta nilai dan rapornya akan terhapus permanen.',
+                  );
+                  if (!yakin || !context.mounted) return;
+                  final ok = await simpan(
+                    context,
+                    () => ref
+                        .read(adminRepositoryProvider)
+                        .hapusSiswa(int.parse(siswa.id)),
+                    'Siswa ${siswa.nama} dihapus.',
+                  );
+                  if (!ok) return;
+                  _segarkan();
+                  if (ctx.mounted) Navigator.pop(ctx);
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );

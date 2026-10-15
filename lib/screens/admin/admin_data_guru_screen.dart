@@ -231,73 +231,76 @@ class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
   ) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.white,
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Detail Guru',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: kText,
+      builder: (ctx) => SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Detail Guru',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: kText,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: CircleAvatar(
+                  radius: 26,
+                  backgroundColor: kBrand.withValues(alpha: 0.12),
+                  child: Text(
+                    guru.nama[0],
+                    style: const TextStyle(
+                      color: kBrand,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 22,
+                    ),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: CircleAvatar(
-                radius: 26,
-                backgroundColor: kBrand.withValues(alpha: 0.12),
-                child: Text(
-                  guru.nama[0],
+                title: Text(
+                  guru.nama,
                   style: const TextStyle(
-                    color: kBrand,
+                    fontSize: 15.5,
                     fontWeight: FontWeight.bold,
-                    fontSize: 22,
                   ),
                 ),
+                subtitle: Text('Guru Mapel: ${guru.mapel}'),
               ),
-              title: Text(
-                guru.nama,
-                style: const TextStyle(
-                  fontSize: 15.5,
-                  fontWeight: FontWeight.bold,
-                ),
+              const Divider(),
+              _buildDetailRow('NIP', guru.nip),
+              _buildDetailRow('Mata Pelajaran', guru.mapel),
+              _buildDetailRow(
+                'Wali Kelas',
+                guru.waliKelas != null
+                    ? 'Kelas ${guru.waliKelas}'
+                    : 'Bukan Wali Kelas',
               ),
-              subtitle: Text('Guru Mapel: ${guru.mapel}'),
-            ),
-            const Divider(),
-            _buildDetailRow('NIP', guru.nip),
-            _buildDetailRow('Mata Pelajaran', guru.mapel),
-            _buildDetailRow(
-              'Wali Kelas',
-              guru.waliKelas != null
-                  ? 'Kelas ${guru.waliKelas}'
-                  : 'Bukan Wali Kelas',
-            ),
-            _buildDetailRow('Email', guru.email),
-            _buildDetailRow('Nomor Telepon', guru.telepon),
-            const SizedBox(height: 16),
-            AksiUbahHapus(
-              onUbah: () {
-                Navigator.pop(ctx);
-                _showEditGuruSheet(context, guru);
-              },
-            ),
-          ],
+              _buildDetailRow('Email', guru.email),
+              _buildDetailRow('Nomor Telepon', guru.telepon),
+              const SizedBox(height: 16),
+              AksiUbahHapus(
+                onUbah: () {
+                  Navigator.pop(ctx);
+                  _showEditGuruSheet(context, guru);
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
