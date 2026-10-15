@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/theme.dart';
 import '../../../core/error/app_exception.dart';
 import '../../../core/widgets/error_view.dart';
 import '../../../widgets/motion.dart';
@@ -127,6 +128,51 @@ class AksiUbahHapus extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Avatar siswa: inisial sebagai lapisan bawah, foto di atasnya bila ada.
+class AvatarSiswa extends StatelessWidget {
+  const AvatarSiswa({
+    super.key,
+    required this.nama,
+    this.url,
+    this.radius = 20,
+  });
+
+  final String nama;
+  final String? url;
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox.square(
+      dimension: radius * 2,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          CircleAvatar(
+            backgroundColor: kBrandSoft,
+            child: Text(
+              nama.isEmpty ? '?' : nama[0].toUpperCase(),
+              style: TextStyle(
+                color: kBrand,
+                fontWeight: FontWeight.bold,
+                fontSize: radius * 0.8,
+              ),
+            ),
+          ),
+          if (url != null)
+            ClipOval(
+              child: Image.network(
+                url!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => const SizedBox.shrink(),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

@@ -50,6 +50,15 @@ final adminPenggunaProvider = FutureProvider<List<UserModel>>(
   (ref) => ref.watch(adminRepositoryProvider).daftarPengguna(),
 );
 
+/// Foto profil semua siswa (id -> URL bertanda). Gagal tidak mengganggu
+/// daftar: avatar jatuh ke inisial.
+final adminFotoSiswaProvider = FutureProvider<Map<int, String>>((ref) async {
+  final siswa = await ref.watch(adminSiswaProvider.future);
+  return ref.watch(adminRepositoryProvider).urlFotoSiswaBanyak([
+    for (final s in siswa) int.parse(s.id),
+  ]);
+});
+
 final adminMapelProvider = FutureProvider<List<MapelModel>>(
   (ref) => ref.watch(adminRepositoryProvider).daftarMapel(),
 );

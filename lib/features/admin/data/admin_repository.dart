@@ -501,6 +501,24 @@ class AdminRepository {
   Future<String?> urlFotoSiswa(int siswaId) =>
       _urlBertanda(_bucketFoto, '$siswaId');
 
+  /// id siswa -> URL bertanda, hanya untuk siswa yang punya foto. Satu
+  /// permintaan untuk semuanya, supaya daftar siswa tidak menembak server
+  /// sekali per baris.
+  Future<Map<int, String>> urlFotoSiswaBanyak(List<int> ids) async {
+    if (ids.isEmpty) return {};
+    try {
+      final hasil = await _db.storage.from(_bucketFoto).createSignedUrlsResult([
+        for (final i in ids) '$i',
+      ], 3600);
+      return {
+        for (final r in hasil)
+          if (r is SignedUrlSuccess) int.parse(r.path): r.signedUrl,
+      };
+    } on StorageException {
+      return {};
+    }
+  }
+
   Future<void> unggahBuktiRapor({
     required int siswaId,
     required String semester,

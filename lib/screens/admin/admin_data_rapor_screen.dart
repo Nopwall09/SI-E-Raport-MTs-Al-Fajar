@@ -488,38 +488,24 @@ class _AdminDataRaporScreenState extends ConsumerState<AdminDataRaporScreen> {
     ),
   );
 
-  /// QR berisi identitas rapor (NISN, kelas, semester) untuk dicetak atau
-  /// dipindai. Tidak ada server verifikasi, jadi QR ini bukan tanda keaslian.
+  /// QR berisi identitas rapor (nama, NISN, kelas, semester) sebagai teks
+  /// biasa. Tidak ada server verifikasi, jadi QR ini bukan tanda keaslian.
   void _qr(DataRaporModel r) {
-    final isi = 'ALFAJAR|RAPOR|${r.nisn}|${r.kelas}|${r.semester}';
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('QR-Code Rapor'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              r.namaSiswa,
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 12),
-            QrCodeWidget(data: isi, size: 200, color: kBrand),
-            const SizedBox(height: 12),
-            Text(
-              'Berisi NISN, kelas, dan semester rapor ini.',
-              textAlign: TextAlign.center,
-              style: Theme.of(ctx).textTheme.bodySmall,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Tutup'),
-          ),
-        ],
-      ),
+    tampilkanDialogQr(
+      context,
+      judul: 'QR-Code Rapor',
+      nama: r.namaSiswa,
+      info: [
+        ('NISN', r.nisn),
+        ('Kelas', r.kelas),
+        ('Semester', _labelSemester(r.semester)),
+      ],
+      isiQr:
+          'RAPOR MTs AL FAJAR KANDAT\n'
+          'Nama: ${r.namaSiswa}\n'
+          'NISN: ${r.nisn}\n'
+          'Kelas: ${r.kelas}\n'
+          'Semester: ${_labelSemester(r.semester)}',
     );
   }
 

@@ -240,17 +240,11 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
               children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: brandColor.withValues(alpha: 0.1),
-                  child: Text(
-                    siswa.nama.isNotEmpty ? siswa.nama[0] : 'S',
-                    style: TextStyle(
-                      color: brandColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
+                AvatarSiswa(
+                  nama: siswa.nama,
+                  url: ref
+                      .watch(adminFotoSiswaProvider)
+                      .valueOrNull?[int.parse(siswa.id)],
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -297,7 +291,7 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
       backgroundColor: Colors.white,
       builder: (ctx) => SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -322,7 +316,13 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
               const SizedBox(height: 10),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: _FotoSiswa(siswa: siswa),
+                leading: AvatarSiswa(
+                  nama: siswa.nama,
+                  radius: 26,
+                  url: ref
+                      .read(adminFotoSiswaProvider)
+                      .valueOrNull?[int.parse(siswa.id)],
+                ),
                 title: Text(
                   siswa.nama,
                   style: const TextStyle(
@@ -416,57 +416,21 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
   }
 
   void _showQrKartuSiswa(BuildContext context, SiswaModel siswa) {
-    final payload = 'ALFAJAR|SISWA|${siswa.nis}|${siswa.kelas}';
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.badge_outlined, color: kBrand),
-            SizedBox(width: 8),
-            Text('Kartu Pelajar Digital'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              siswa.nama,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            Text(
-              'NIS: ${siswa.nis} · NISN: ${siswa.nisn} · Kelas ${siswa.kelas}',
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-            ),
-            const SizedBox(height: 16),
-            QrCodeWidget(
-              data: payload,
-              size: 180,
-              color: const Color(0xFF0D5C3A),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Text(
-                'Berisi NIS dan kelas siswa.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 11),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: kBrand),
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Tutup'),
-          ),
-        ],
-      ),
+    tampilkanDialogQr(
+      context,
+      judul: 'Kartu Pelajar Digital',
+      nama: siswa.nama,
+      info: [
+        ('NIS', siswa.nis),
+        ('NISN', siswa.nisnAsli ?? '-'),
+        ('Kelas', siswa.kelas),
+      ],
+      isiQr:
+          'KARTU PELAJAR MTs AL FAJAR KANDAT\n'
+          'Nama: ${siswa.nama}\n'
+          'NIS: ${siswa.nis}\n'
+          'NISN: ${siswa.nisnAsli ?? '-'}\n'
+          'Kelas: ${siswa.kelas}',
     );
   }
 
@@ -478,13 +442,14 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
       onPicked: (file) async {
         final bytes = await file.readAsBytes();
         if (!context.mounted) return;
-        await simpan(
+        final ok = await simpan(
           context,
           () => ref
               .read(adminRepositoryProvider)
               .unggahFotoSiswa(int.parse(siswa.id), bytes, mimeGambar(file)),
           'Foto ${siswa.nama} tersimpan.',
         );
+        if (ok) ref.invalidate(adminFotoSiswaProvider);
       },
     );
   }
@@ -742,62 +707,6 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// Foto profil dari Supabase Storage. Inisial nama jadi lapisan bawah, jadi
-/// tetap tampil bila siswa belum punya foto atau gambar gagal dimuat.
-class _FotoSiswa extends ConsumerStatefulWidget {
-  const _FotoSiswa({required this.siswa});
-
-  final SiswaModel siswa;
-
-  @override
-  ConsumerState<_FotoSiswa> createState() => _FotoSiswaState();
-}
-
-class _FotoSiswaState extends ConsumerState<_FotoSiswa> {
-  late final Future<String?> _url = ref
-      .read(adminRepositoryProvider)
-      .urlFotoSiswa(int.parse(widget.siswa.id))
-      .catchError((_) => null);
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 52,
-      height: 52,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          CircleAvatar(
-            backgroundColor: kBrandSoft,
-            child: Text(
-              widget.siswa.nama.isEmpty ? '?' : widget.siswa.nama[0],
-              style: const TextStyle(
-                color: kBrand,
-                fontWeight: FontWeight.bold,
-                fontSize: 22,
-              ),
-            ),
-          ),
-          FutureBuilder<String?>(
-            future: _url,
-            builder: (context, snap) {
-              final url = snap.data;
-              if (url == null) return const SizedBox.shrink();
-              return ClipOval(
-                child: Image.network(
-                  url,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => const SizedBox.shrink(),
-                ),
-              );
-            },
-          ),
-        ],
       ),
     );
   }
