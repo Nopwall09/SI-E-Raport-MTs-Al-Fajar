@@ -5,6 +5,7 @@ import '../../widgets/motion.dart';
 import '../../features/admin/presentation/admin_providers.dart';
 import '../../features/admin/presentation/admin_widgets.dart';
 import '../../models/siswa_model.dart';
+import 'widgets/admin_menu_drawer.dart';
 
 class AdminDataSiswaScreen extends ConsumerStatefulWidget {
   const AdminDataSiswaScreen({super.key});
@@ -52,6 +53,7 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
     const brandColor = kBrand;
 
     return Scaffold(
+      drawer: const AdminMenuDrawer(currentRoute: '/admin/siswa'),
       appBar: AppBar(
         title: const Text(
           'Data Siswa',

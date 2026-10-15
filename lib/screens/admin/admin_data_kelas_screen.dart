@@ -5,6 +5,7 @@ import '../../widgets/motion.dart';
 import '../../features/admin/presentation/admin_providers.dart';
 import '../../features/admin/presentation/admin_widgets.dart';
 import '../../models/kelas_model.dart';
+import 'widgets/admin_menu_drawer.dart';
 
 class AdminDataKelasScreen extends ConsumerStatefulWidget {
   const AdminDataKelasScreen({super.key});
@@ -39,6 +40,7 @@ class _AdminDataKelasScreenState extends ConsumerState<AdminDataKelasScreen> {
     const brandColor = kBrand;
 
     return Scaffold(
+      drawer: const AdminMenuDrawer(currentRoute: '/admin/kelas'),
       appBar: AppBar(
         title: const Text(
           'Data Kelas',

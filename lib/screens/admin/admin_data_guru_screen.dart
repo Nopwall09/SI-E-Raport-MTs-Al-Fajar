@@ -6,6 +6,7 @@ import '../../features/admin/presentation/admin_providers.dart';
 import '../../features/admin/presentation/admin_widgets.dart';
 import '../../models/guru_model.dart';
 import '../../models/user_model.dart';
+import 'widgets/admin_menu_drawer.dart';
 
 class AdminDataGuruScreen extends ConsumerStatefulWidget {
   const AdminDataGuruScreen({super.key});
@@ -43,6 +44,7 @@ class _AdminDataGuruScreenState extends ConsumerState<AdminDataGuruScreen> {
     const brandColor = kBrand;
 
     return Scaffold(
+      drawer: const AdminMenuDrawer(currentRoute: '/admin/guru'),
       appBar: AppBar(
         title: const Text(
           'Data Guru',

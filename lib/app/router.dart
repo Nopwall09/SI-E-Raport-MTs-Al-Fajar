@@ -6,6 +6,9 @@ import '../features/auth/domain/user.dart';
 import '../features/auth/presentation/auth_controller.dart';
 import '../features/auth/presentation/login_page.dart';
 import '../features/auth/presentation/splash_page.dart';
+import '../screens/admin/admin_data_rapor_screen.dart';
+import '../screens/admin/admin_mata_pelajaran_screen.dart';
+import '../screens/admin/admin_tahun_ajaran_screen.dart';
 import 'role_shell.dart';
 import 'role_tabs.dart';
 
@@ -70,6 +73,18 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/splash', builder: (context, state) => const SplashPage()),
       GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
+      GoRoute(
+        path: '/admin/mapel',
+        builder: (context, state) => const AdminMataPelajaranScreen(),
+      ),
+      GoRoute(
+        path: '/admin/tahun-ajaran',
+        builder: (context, state) => const AdminTahunAjaranScreen(),
+      ),
+      GoRoute(
+        path: '/admin/rapor',
+        builder: (context, state) => const AdminDataRaporScreen(),
+      ),
       for (final role in UserRole.values) _roleShell(role),
     ],
   );

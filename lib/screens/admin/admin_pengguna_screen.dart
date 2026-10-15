@@ -6,6 +6,7 @@ import '../../widgets/motion.dart';
 import '../../features/admin/presentation/admin_providers.dart';
 import '../../features/admin/presentation/admin_widgets.dart';
 import '../../models/user_model.dart';
+import 'widgets/admin_menu_drawer.dart';
 
 class AdminPenggunaScreen extends ConsumerStatefulWidget {
   const AdminPenggunaScreen({super.key});
@@ -46,6 +47,7 @@ class _AdminPenggunaScreenState extends ConsumerState<AdminPenggunaScreen> {
     const brandColor = kBrand;
 
     return Scaffold(
+      drawer: const AdminMenuDrawer(currentRoute: '/admin/pengguna'),
       appBar: AppBar(
         title: const Text(
           'Pengguna',

@@ -7,6 +7,7 @@ import '../../features/admin/presentation/admin_providers.dart';
 import '../../features/admin/presentation/admin_widgets.dart';
 import '../../models/dashboard_model.dart';
 import '../../widgets/stat_card_widget.dart';
+import 'widgets/admin_menu_drawer.dart';
 
 class AdminDashboardScreen extends ConsumerWidget {
   const AdminDashboardScreen({super.key});
@@ -26,6 +27,7 @@ class AdminDashboardScreen extends ConsumerWidget {
         statusAsync(progres, () => ref.invalidate(adminProgresProvider));
 
     return Scaffold(
+      drawer: const AdminMenuDrawer(currentRoute: '/admin/beranda'),
       appBar: AppBar(
         title: const Text(
           'Dashboard',
