@@ -6,7 +6,9 @@ import '../../../models/dashboard_model.dart';
 import '../../../models/data_rapor_model.dart';
 import '../../../models/guru_model.dart';
 import '../../../models/kelas_model.dart';
+import '../../../models/mapel_model.dart';
 import '../../../models/siswa_model.dart';
+import '../../../models/tahun_ajaran_model.dart';
 import '../../../models/user_model.dart';
 import '../data/admin_repository.dart';
 
@@ -46,6 +48,14 @@ final adminKelasProvider = FutureProvider<List<KelasModel>>(
 
 final adminPenggunaProvider = FutureProvider<List<UserModel>>(
   (ref) => ref.watch(adminRepositoryProvider).daftarPengguna(),
+);
+
+final adminMapelProvider = FutureProvider<List<MapelModel>>(
+  (ref) => ref.watch(adminRepositoryProvider).daftarMapel(),
+);
+
+final adminTahunAjaranProvider = FutureProvider<List<TahunAjaranModel>>(
+  (ref) => ref.watch(adminRepositoryProvider).daftarTahunAjaran(),
 );
 
 final adminRaporProvider =

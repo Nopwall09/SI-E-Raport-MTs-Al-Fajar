@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme.dart';
+import '../../features/admin/presentation/admin_providers.dart';
+import '../../features/admin/presentation/admin_widgets.dart';
 import '../../models/tahun_ajaran_model.dart';
+import '../../widgets/motion.dart';
 import 'widgets/admin_menu_drawer.dart';
 
+/// Tahun ajaran (tabel `tahun_ajaran`). Hanya satu yang aktif; yang aktif
+/// menentukan kelas, nilai, dan rapor yang tampil di seluruh aplikasi.
 class AdminTahunAjaranScreen extends ConsumerStatefulWidget {
   const AdminTahunAjaranScreen({super.key});
 
@@ -15,544 +20,326 @@ class AdminTahunAjaranScreen extends ConsumerStatefulWidget {
 
 class _AdminTahunAjaranScreenState
     extends ConsumerState<AdminTahunAjaranScreen> {
-  final List<TahunAjaranModel> _daftarTahunAjaran = [
-    const TahunAjaranModel(
-      id: '1',
-      tahun: '2026/2027',
-      semester: 'Ganjil',
-      isActive: true,
-      skm: 75,
-    ),
-    const TahunAjaranModel(
-      id: '2',
-      tahun: '2025/2026',
-      semester: 'Genap',
-      isActive: false,
-      skm: 75,
-    ),
-    const TahunAjaranModel(
-      id: '3',
-      tahun: '2025/2026',
-      semester: 'Ganjil',
-      isActive: false,
-      skm: 75,
-    ),
-    const TahunAjaranModel(
-      id: '4',
-      tahun: '2024/2025',
-      semester: 'Genap',
-      isActive: false,
-      skm: 75,
-    ),
-  ];
+  void _segarkan() {
+    // Tahun aktif mengubah hampir semua data lain.
+    for (final p in [
+      adminTahunAjaranProvider,
+      tahunAjaranAktifProvider,
+      adminKelasProvider,
+      adminSiswaProvider,
+      adminStatistikProvider,
+      adminProgresProvider,
+      opsiKelasProvider,
+    ]) {
+      ref.invalidate(p);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final data = ref.watch(adminTahunAjaranProvider);
+    final list = data.valueOrNull ?? const <TahunAjaranModel>[];
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAF9),
       drawer: const AdminMenuDrawer(currentRoute: '/admin/tahun-ajaran'),
-      appBar: AppBar(
-        title: const Text(
-          'Tahun Ajaran',
-          style: TextStyle(
-            color: kText,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-      body: SafeArea(
-        child: ListView.separated(
-          padding: const EdgeInsets.all(16),
-          itemCount: _daftarTahunAjaran.length,
-          separatorBuilder: (context, index) => const SizedBox(height: 12),
-          itemBuilder: (context, index) {
-            final item = _daftarTahunAjaran[index];
-            return _buildTahunAjaranCard(item);
-          },
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFFE2E8F0),
-        foregroundColor: const Color(0xFF0F172A),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(50),
-          side: const BorderSide(color: Color(0xFF334155), width: 1.5),
-        ),
-        elevation: 2,
-        onPressed: () => _showAddTahunAjaranSheet(context),
-        child: const Icon(Icons.add, size: 28),
-      ),
-    );
-  }
-
-  /// [FrameLayout (Stack)] & [PopupMenu (PopupMenuButton)] & [ContextMenu (onLongPress)]
-  Widget _buildTahunAjaranCard(TahunAjaranModel item) {
-    return GestureDetector(
-      // [ContextMenu]: Floating context menu saat ditekan lama
-      onLongPressStart: (details) =>
-          _showTahunAjaranContextMenu(context, details.globalPosition, item),
-      child: Stack(
-        // [FrameLayout]: Tumpukan kartu dengan badge posisi khusus
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: item.isActive
-                    ? const Color(0xFF86EFAC)
-                    : Colors.grey.shade300,
-                width: item.isActive ? 1.6 : 1.2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
-                  blurRadius: 4,
-                  offset: const Offset(0, 1),
-                ),
-              ],
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(10),
-                onTap: () => _showTahunAjaranDetail(context, item),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              item.tahun,
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1E293B),
-                              ),
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              'Semester ${item.semester}',
-                              style: TextStyle(
-                                fontSize: 12.5,
-                                color: Colors.grey.shade600,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
+      appBar: AppBar(title: const Text('Tahun Ajaran')),
+      body:
+          statusAsync(data, () => ref.invalidate(adminTahunAjaranProvider)) ??
+          RefreshIndicator(
+            color: kBrand,
+            onRefresh: () async {
+              ref.invalidate(adminTahunAjaranProvider);
+              try {
+                await ref.read(adminTahunAjaranProvider.future);
+              } catch (_) {}
+            },
+            child: list.isEmpty
+                ? ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: const [
+                      SizedBox(height: 120),
+                      Center(
+                        child: Text(
+                          'Belum ada tahun ajaran.',
+                          style: TextStyle(color: kMuted),
                         ),
-                      ),
-                      if (item.isActive)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFDCFCE7),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: const Color(0xFF86EFAC)),
-                          ),
-                          child: const Text(
-                            'Aktif',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF166534),
-                            ),
-                          ),
-                        ),
-                      const SizedBox(width: 4),
-
-                      // [PopupMenu]: Tombol titik tiga untuk aksi per tahun ajaran
-                      PopupMenuButton<String>(
-                        icon: const Icon(Icons.more_vert, size: 20),
-                        tooltip: 'Pilihan Tahun Ajaran',
-                        onSelected: (val) {
-                          if (val == 'aktifkan') {
-                            _setAsAktif(item);
-                          } else if (val == 'detail') {
-                            _showTahunAjaranDetail(context, item);
-                          } else if (val == 'hapus') {
-                            _hapusTahunAjaran(item);
-                          }
-                        },
-                        itemBuilder: (context) => [
-                          if (!item.isActive)
-                            const PopupMenuItem(
-                              value: 'aktifkan',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.check_circle_outline,
-                                      size: 18, color: Colors.green),
-                                  SizedBox(width: 8),
-                                  Text('Jadikan Aktif'),
-                                ],
-                              ),
-                            ),
-                          const PopupMenuItem(
-                            value: 'detail',
-                            child: Row(
-                              children: [
-                                Icon(Icons.info_outline, size: 18),
-                                SizedBox(width: 8),
-                                Text('Detail Tahun Ajaran'),
-                              ],
-                            ),
-                          ),
-                          if (!item.isActive)
-                            const PopupMenuItem(
-                              value: 'hapus',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.delete_outline,
-                                      size: 18, color: Colors.red),
-                                  SizedBox(width: 8),
-                                  Text('Hapus Arsip',
-                                      style: TextStyle(color: Colors.red)),
-                                ],
-                              ),
-                            ),
-                        ],
                       ),
                     ],
+                  )
+                : ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+                    itemCount: list.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 10),
+                    itemBuilder: (_, i) =>
+                        FadeSlideIn(index: i, child: _kartu(list[i])),
                   ),
-                ),
-              ),
-            ),
           ),
-          if (item.isActive)
-            Positioned(
-              top: 0,
-              left: 0,
-              child: Container(
-                width: 6,
-                height: 60,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF16A34A),
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(10),
-                    bottomLeft: Radius.circular(10),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _form(context),
+        icon: const Icon(Icons.add),
+        label: const Text('Tambah'),
+      ),
+    );
+  }
+
+  Widget _kartu(TahunAjaranModel t) => Material(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(kRadiusCard),
+    child: InkWell(
+      borderRadius: BorderRadius.circular(kRadiusCard),
+      onTap: () => _detail(t),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(kRadiusCard),
+          border: Border.all(color: t.isActive ? kBrand : kBorder),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'TA ${t.tahun}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Semester ${t.semesterLabel}, SKM ${t.skm}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            if (t.isActive)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: kBrandSoft,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: const Text(
+                  'Aktif',
+                  style: TextStyle(
+                    color: kBrand,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
                   ),
                 ),
               ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  /// [ContextMenu]: Menu konteks melayang
-  void _showTahunAjaranContextMenu(
-      BuildContext context, Offset position, TahunAjaranModel item) {
-    showMenu<String>(
-      context: context,
-      position: RelativeRect.fromLTRB(
-        position.dx,
-        position.dy,
-        position.dx + 1,
-        position.dy + 1,
-      ),
-      items: [
-        PopupMenuItem(
-          value: 'aktifkan',
-          enabled: !item.isActive,
-          child: Text(item.isActive
-              ? 'Tahun Ajaran ini Sedang Aktif'
-              : 'Aktifkan Tahun Ajaran ${item.tahun}'),
+          ],
         ),
-        const PopupMenuItem(
-          value: 'detail',
-          child: Text('Buka Lembar Detail SKM'),
-        ),
-      ],
-    ).then((val) {
-      if (val == 'aktifkan' && !item.isActive) {
-        _setAsAktif(item);
-      } else if (val == 'detail') {
-        _showTahunAjaranDetail(context, item);
-      }
-    });
-  }
-
-  void _setAsAktif(TahunAjaranModel item) {
-    setState(() {
-      for (int i = 0; i < _daftarTahunAjaran.length; i++) {
-        final curr = _daftarTahunAjaran[i];
-        _daftarTahunAjaran[i] = TahunAjaranModel(
-          id: curr.id,
-          tahun: curr.tahun,
-          semester: curr.semester,
-          isActive: curr.id == item.id,
-          skm: curr.skm,
-        );
-      }
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-            'Tahun ajaran ${item.tahun} (Semester ${item.semester}) sekarang AKTIF.'),
       ),
-    );
-  }
+    ),
+  );
 
-  void _hapusTahunAjaran(TahunAjaranModel item) {
-    setState(() {
-      _daftarTahunAjaran.removeWhere((ta) => ta.id == item.id);
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Tahun ajaran ${item.tahun} telah dihapus.')),
-    );
-  }
-
-  void _showTahunAjaranDetail(BuildContext context, TahunAjaranModel item) {
+  void _detail(TahunAjaranModel t) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Tahun Ajaran ${item.tahun}',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E293B),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            _buildDetailRow('Tahun Pelajaran', item.tahun),
-            _buildDetailRow('Semester Aktif', 'Semester ${item.semester}'),
-            _buildDetailRow('Standar Ketuntasan (SKM)', '${item.skm}'),
-            _buildDetailRow(
-                'Status', item.isActive ? 'Sedang Berjalan (Aktif)' : 'Arsip'),
+            Text('TA ${t.tahun}', style: Theme.of(ctx).textTheme.titleLarge),
+            const SizedBox(height: 12),
+            _baris('Semester', t.semesterLabel),
+            _baris('Standar ketuntasan (SKM)', '${t.skm}'),
+            _baris('Status', t.isActive ? 'Aktif' : 'Tidak aktif'),
             const SizedBox(height: 16),
-            if (!item.isActive)
-              FilledButton.icon(
-                style: FilledButton.styleFrom(backgroundColor: kBrand),
-                onPressed: () {
-                  _setAsAktif(item);
-                  Navigator.pop(ctx);
+            if (!t.isActive) ...[
+              OutlinedButton.icon(
+                onPressed: () async {
+                  final yakin = await konfirmasiAksi(
+                    ctx,
+                    judul: 'Jadikan TA ${t.tahun} aktif?',
+                    isi:
+                        'Kelas, nilai, dan rapor yang tampil akan mengikuti tahun ajaran ini.',
+                    aksi: 'Aktifkan',
+                  );
+                  if (!yakin || !mounted) return;
+                  final ok = await simpan(
+                    context,
+                    () => ref
+                        .read(adminRepositoryProvider)
+                        .aktifkanTahunAjaran(int.parse(t.id)),
+                    'TA ${t.tahun} sekarang aktif.',
+                  );
+                  if (!ok) return;
+                  _segarkan();
+                  if (ctx.mounted) Navigator.pop(ctx);
                 },
                 icon: const Icon(Icons.check_circle_outline, size: 18),
-                label: const Text('Jadikan Tahun Ajaran Aktif'),
+                label: const Text('Jadikan aktif'),
               ),
+              const SizedBox(height: 8),
+            ],
+            AksiUbahHapus(
+              onUbah: () {
+                Navigator.pop(ctx);
+                _form(context, awal: t);
+              },
+              onHapus: () async {
+                final yakin = await konfirmasiHapus(
+                  ctx,
+                  judul: 'Hapus TA ${t.tahun}?',
+                  isi:
+                      'Tahun ajaran yang sudah punya kelas tidak bisa dihapus.',
+                );
+                if (!yakin || !mounted) return;
+                final ok = await simpan(
+                  context,
+                  () => ref.read(adminRepositoryProvider).hapusTahunAjaran(t),
+                  'TA ${t.tahun} dihapus.',
+                );
+                if (!ok) return;
+                _segarkan();
+                if (ctx.mounted) Navigator.pop(ctx);
+              },
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label,
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF1E293B),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _baris(String label, String nilai) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: const TextStyle(color: kMuted)),
+        Text(nilai, style: const TextStyle(fontWeight: FontWeight.w600)),
+      ],
+    ),
+  );
 
-  /// Form Tambah Tahun Ajaran: Memuat [RadioButton] & [CheckBox]
-  void _showAddTahunAjaranSheet(BuildContext context) {
-    final tahunCtrl = TextEditingController();
-    final skmCtrl = TextEditingController(text: '75');
-    String selectedSemester = 'Ganjil';
-    bool langsungAktifkan = false;
+  /// Form tambah (awal == null) atau ubah.
+  void _form(BuildContext context, {TahunAjaranModel? awal}) {
+    final tahun = TextEditingController(text: awal?.tahun);
+    final skm = TextEditingController(text: '${awal?.skm ?? 75}');
+    var semester = awal?.semester ?? 'ganjil';
+    var langsungAktif = false;
+    String? galat;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) => Padding(
-          padding: EdgeInsets.only(
-            top: 20,
-            left: 20,
-            right: 20,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+        builder: (ctx, setModal) => SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            4,
+            20,
+            MediaQuery.of(ctx).viewInsets.bottom + 20,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Tambah Tahun Ajaran',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(ctx),
-                  ),
-                ],
+              Text(
+                awal == null ? 'Tambah Tahun Ajaran' : 'Ubah Tahun Ajaran',
+                style: Theme.of(ctx).textTheme.titleLarge,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               TextField(
-                controller: tahunCtrl,
-                decoration: InputDecoration(
-                  labelText: 'Tahun Ajaran',
-                  hintText: 'Contoh: 2027/2028',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                controller: tahun,
+                keyboardType: TextInputType.datetime,
+                decoration: const InputDecoration(
+                  labelText: 'Tahun ajaran',
+                  hintText: '2026/2027',
                 ),
               ),
               const SizedBox(height: 12),
-
-              // [RadioButton]: Memilih Semester Ganjil atau Genap
               const Text(
-                'Pilih Semester (RadioButton):',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                'Semester',
+                style: TextStyle(fontWeight: FontWeight.w600),
               ),
-              Row(
-                children: [
-                  Expanded(
-                    child: RadioListTile<String>(
-                      title: const Text('Ganjil', style: TextStyle(fontSize: 13)),
-                      value: 'Ganjil',
-                      groupValue: selectedSemester,
-                      activeColor: kBrand,
-                      contentPadding: EdgeInsets.zero,
-                      onChanged: (val) {
-                        if (val != null) {
-                          setModalState(() => selectedSemester = val);
-                        }
-                      },
-                    ),
-                  ),
-                  Expanded(
-                    child: RadioListTile<String>(
-                      title: const Text('Genap', style: TextStyle(fontSize: 13)),
-                      value: 'Genap',
-                      groupValue: selectedSemester,
-                      activeColor: kBrand,
-                      contentPadding: EdgeInsets.zero,
-                      onChanged: (val) {
-                        if (val != null) {
-                          setModalState(() => selectedSemester = val);
-                        }
-                      },
-                    ),
-                  ),
-                ],
+              RadioGroup<String>(
+                groupValue: semester,
+                onChanged: (v) => setModal(() => semester = v ?? semester),
+                child: const Row(
+                  children: [
+                    Radio<String>(value: 'ganjil'),
+                    Text('Ganjil'),
+                    SizedBox(width: 16),
+                    Radio<String>(value: 'genap'),
+                    Text('Genap'),
+                  ],
+                ),
               ),
-
-              const SizedBox(height: 8),
               TextField(
-                controller: skmCtrl,
+                controller: skm,
                 keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'SKM (Standar Ketuntasan)',
-                  hintText: '75',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                decoration: const InputDecoration(
+                  labelText: 'Standar ketuntasan (SKM)',
+                  helperText: '0 sampai 100, berlaku untuk semua mapel',
                 ),
               ),
-              const SizedBox(height: 10),
-
-              // [CheckBox]: Opsi mengaktifkan langsung
-              CheckboxListTile(
-                title: const Text(
-                  'Langsung jadikan tahun ajaran aktif',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+              if (awal == null)
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  title: const Text('Langsung jadikan aktif'),
+                  value: langsungAktif,
+                  onChanged: (v) => setModal(() => langsungAktif = v ?? false),
                 ),
-                value: langsungAktifkan,
-                activeColor: kBrand,
-                contentPadding: EdgeInsets.zero,
-                controlAffinity: ListTileControlAffinity.leading,
-                onChanged: (val) {
-                  setModalState(() => langsungAktifkan = val ?? false);
-                },
-              ),
-
+              if (galat != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  galat!,
+                  style: TextStyle(color: Theme.of(ctx).colorScheme.error),
+                ),
+              ],
               const SizedBox(height: 16),
               FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: kBrand,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                onPressed: () {
-                  if (tahunCtrl.text.trim().isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Tahun ajaran wajib diisi.')),
-                    );
+                onPressed: () async {
+                  final t = tahun.text.trim();
+                  final angka = int.tryParse(skm.text.trim());
+                  if (!RegExp(r'^\d{4}/\d{4}$').hasMatch(t)) {
+                    setModal(() => galat = 'Format tahun ajaran: 2026/2027.');
                     return;
                   }
-                  final newId =
-                      DateTime.now().millisecondsSinceEpoch.toString();
-                  setState(() {
-                    if (langsungAktifkan) {
-                      for (int i = 0; i < _daftarTahunAjaran.length; i++) {
-                        final c = _daftarTahunAjaran[i];
-                        _daftarTahunAjaran[i] = TahunAjaranModel(
-                          id: c.id,
-                          tahun: c.tahun,
-                          semester: c.semester,
-                          isActive: false,
-                          skm: c.skm,
+                  if (angka == null || angka < 0 || angka > 100) {
+                    setModal(() => galat = 'SKM harus angka 0 sampai 100.');
+                    return;
+                  }
+                  final repo = ref.read(adminRepositoryProvider);
+                  final ok = await simpan(
+                    context,
+                    () async {
+                      if (awal == null) {
+                        final id = await repo.tambahTahunAjaran(
+                          tahun: t,
+                          semester: semester,
+                          skm: angka,
+                        );
+                        if (langsungAktif) await repo.aktifkanTahunAjaran(id);
+                      } else {
+                        await repo.ubahTahunAjaran(
+                          id: int.parse(awal.id),
+                          tahun: t,
+                          semester: semester,
+                          skm: angka,
                         );
                       }
-                    }
-                    _daftarTahunAjaran.insert(
-                      0,
-                      TahunAjaranModel(
-                        id: newId,
-                        tahun: tahunCtrl.text.trim(),
-                        semester: selectedSemester,
-                        isActive: langsungAktifkan,
-                        skm: int.tryParse(skmCtrl.text) ?? 75,
-                      ),
-                    );
-                  });
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                          'Tahun ajaran ${tahunCtrl.text.trim()} berhasil ditambahkan.'),
-                    ),
+                    },
+                    awal == null ? 'TA $t ditambahkan.' : 'TA $t diperbarui.',
                   );
+                  if (!ok) return;
+                  _segarkan();
+                  if (ctx.mounted) Navigator.pop(ctx);
                 },
-                child: const Text('Simpan Tahun Ajaran',
-                    style: TextStyle(fontWeight: FontWeight.bold)),
+                child: Text(awal == null ? 'Simpan' : 'Simpan Perubahan'),
               ),
             ],
           ),

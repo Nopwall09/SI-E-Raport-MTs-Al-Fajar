@@ -40,11 +40,14 @@ Future<bool> simpan(
   }
 }
 
-/// Dialog konfirmasi aksi yang tidak bisa dibatalkan. true bila dilanjutkan.
-Future<bool> konfirmasiHapus(
+/// Dialog konfirmasi. true bila dilanjutkan. [berbahaya] mewarnai tombol aksi
+/// merah (untuk hapus).
+Future<bool> konfirmasiAksi(
   BuildContext context, {
   required String judul,
   required String isi,
+  required String aksi,
+  bool berbahaya = false,
 }) async {
   final ya = await showDialog<bool>(
     context: context,
@@ -57,17 +60,32 @@ Future<bool> konfirmasiHapus(
           child: const Text('Batal'),
         ),
         TextButton(
-          style: TextButton.styleFrom(
-            foregroundColor: Theme.of(ctx).colorScheme.error,
-          ),
+          style: berbahaya
+              ? TextButton.styleFrom(
+                  foregroundColor: Theme.of(ctx).colorScheme.error,
+                )
+              : null,
           onPressed: () => Navigator.pop(ctx, true),
-          child: const Text('Hapus'),
+          child: Text(aksi),
         ),
       ],
     ),
   );
   return ya ?? false;
 }
+
+/// Konfirmasi aksi yang tidak bisa dibatalkan.
+Future<bool> konfirmasiHapus(
+  BuildContext context, {
+  required String judul,
+  required String isi,
+}) => konfirmasiAksi(
+  context,
+  judul: judul,
+  isi: isi,
+  aksi: 'Hapus',
+  berbahaya: true,
+);
 
 /// Dua tombol di dasar sheet detail: Hapus (outline) dan Ubah (utama).
 class AksiUbahHapus extends StatelessWidget {
