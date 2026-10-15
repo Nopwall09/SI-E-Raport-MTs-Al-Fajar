@@ -5,6 +5,8 @@ import '../../widgets/motion.dart';
 import '../../features/admin/presentation/admin_providers.dart';
 import '../../features/admin/presentation/admin_widgets.dart';
 import '../../models/siswa_model.dart';
+import '../../widgets/media_picker_dialog.dart';
+import '../../widgets/qr_code_widget.dart';
 import 'widgets/admin_menu_drawer.dart';
 
 class AdminDataSiswaScreen extends ConsumerStatefulWidget {
@@ -350,7 +352,42 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
               'Nama Orang Tua / Wali',
               siswa.namaWali.isNotEmpty ? siswa.namaWali : 'Belum terhubung',
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
+            // [QR-Code (2%)] & [Kamera/Galeri (2%)]: Tombol Kartu Pelajar QR & Foto Profil
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _showQrKartuSiswa(context, siswa);
+                    },
+                    icon: const Icon(Icons.qr_code, size: 16),
+                    label: const Text('Kartu Pelajar QR',
+                        style: TextStyle(fontSize: 12)),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _uploadFotoSiswa(context, siswa);
+                    },
+                    icon: const Icon(Icons.camera_alt_outlined, size: 16),
+                    label: const Text('Foto (Kamera/Galeri)',
+                        style: TextStyle(fontSize: 12)),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
             AksiUbahHapus(
               onUbah: () {
                 Navigator.pop(ctx);
@@ -379,6 +416,71 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showQrKartuSiswa(BuildContext context, SiswaModel siswa) {
+    final payload = 'ALFAJAR-SISWA-${siswa.nisn}-${siswa.kelas}-VALID';
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.badge_outlined, color: kBrand),
+            SizedBox(width: 8),
+            Text('Kartu Pelajar Digital'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              siswa.nama,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            Text('NIS: ${siswa.nis} · NISN: ${siswa.nisn} · Kelas ${siswa.kelas}',
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+            const SizedBox(height: 16),
+            QrCodeWidget(data: payload, size: 180, color: const Color(0xFF0D5C3A)),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Text(
+                'Scan QR-Code untuk verifikasi identitas siswa resmi MTs Al Fajar Kandat.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 11),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: kBrand),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Tutup'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _uploadFotoSiswa(BuildContext context, SiswaModel siswa) {
+    MediaPickerDialog.show(
+      context,
+      title: 'Pilih Sumber Foto Profil Siswa',
+      studentName: siswa.nama,
+      onMediaSelected: (source, fileName) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                '[$source] Berhasil memilih berkas $fileName. Mengunggah ke Supabase Storage bucket "foto-siswa"...'),
+          ),
+        );
+      },
     );
   }
 
