@@ -69,4 +69,14 @@ void main() {
     expect(find.text('Username atau password salah.'), findsOneWidget);
     expect(find.widgetWithText(FilledButton, 'Masuk'), findsOneWidget);
   });
+
+  testWidgets('wali murid masuk dan melihat halaman perkembangan anak', (
+    tester,
+  ) async {
+    await _login(tester, 'wali');
+
+    expect(find.text('Perkembangan Anak'), findsWidgets);
+    expect(find.text('Muhammad Farhan Al-Ghifari'), findsOneWidget);
+    expect(find.text('Grafik Perkembangan Berkala'), findsOneWidget);
+  });
 }
