@@ -406,7 +406,9 @@ class AdminRepository {
   Future<List<MapelModel>> daftarMapel() async {
     final rows = await _db
         .from('mapel')
-        .select('id,kode,nama,penugasan_mengajar(guru(nama))')
+        .select(
+          'id,kode,nama,kategori,jam_mulai,penugasan_mengajar(guru(nama))',
+        )
         .order('nama');
     return [
       for (final r in rows)
@@ -415,18 +417,59 @@ class AdminRepository {
           kode: r['kode'] as String,
           nama: r['nama'] as String,
           guruPengampu: _guruMapel(r['penugasan_mengajar']),
+          kategori: r['kategori'] as String,
+          jamMulai: (r['jam_mulai'] as String?)?.substring(0, 5),
         ),
     ];
   }
 
-  Future<void> tambahMapel({required String kode, required String nama}) =>
-      _db.from('mapel').insert({'kode': kode, 'nama': nama});
+  /// Mengembalikan id baris baru. [jamMulai] berformat 'HH:mm' atau null.
+  Future<int> tambahMapel({
+    required String kode,
+    required String nama,
+    required String kategori,
+    String? jamMulai,
+  }) async {
+    final row = await _db
+        .from('mapel')
+        .insert({
+          'kode': kode,
+          'nama': nama,
+          'kategori': kategori,
+          'jam_mulai': jamMulai,
+        })
+        .select('id')
+        .single();
+    return row['id'] as int;
+  }
 
   Future<void> ubahMapel({
     required int id,
     required String kode,
     required String nama,
-  }) => _db.from('mapel').update({'kode': kode, 'nama': nama}).eq('id', id);
+    required String kategori,
+    String? jamMulai,
+  }) => _db
+      .from('mapel')
+      .update({
+        'kode': kode,
+        'nama': nama,
+        'kategori': kategori,
+        'jam_mulai': jamMulai,
+      })
+      .eq('id', id);
+
+  /// Menetapkan guru pengampu mapel di satu kelas. Satu kelas hanya punya satu
+  /// guru per mapel, jadi guru lama di kelas itu digantikan.
+  Future<void> tugaskanGuru({
+    required int mapelId,
+    required int guruId,
+    required int kelasId,
+  }) => _db.from('penugasan_mengajar').upsert({
+    'mapel_id': mapelId,
+    'guru_id': guruId,
+    'kelas_id': kelasId,
+  }, onConflict: 'kelas_id,mapel_id');
 
   /// Gagal (23503) bila mapel sudah dipakai penugasan atau nilai.
   Future<void> hapusMapel(int id) => _db.from('mapel').delete().eq('id', id);

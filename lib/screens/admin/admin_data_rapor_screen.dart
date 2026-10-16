@@ -76,7 +76,30 @@ class _AdminDataRaporScreenState extends ConsumerState<AdminDataRaporScreen> {
 
     return Scaffold(
       drawer: const AdminMenuDrawer(currentRoute: '/admin/rapor'),
-      appBar: AppBar(title: const Text('Data Rapor')),
+      appBar: AppBar(
+        title: const Text('Data Rapor'),
+        actions: [
+          // Options menu: menu titik tiga di app bar.
+          PopupMenuButton<String>(
+            tooltip: 'Menu',
+            onSelected: (v) {
+              final daftar = data?.valueOrNull;
+              if (v == 'muat' && kunci != null) {
+                ref.invalidate(adminRaporProvider(kunci));
+              } else if (v == 'offline' && daftar != null && kelas != null) {
+                _simpanLuring(daftar, kelas.label);
+              }
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: 'muat', child: Text('Muat ulang')),
+              PopupMenuItem(
+                value: 'offline',
+                child: Text('Simpan untuk offline'),
+              ),
+            ],
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Column(
           children: [
