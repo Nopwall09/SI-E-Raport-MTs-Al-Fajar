@@ -382,7 +382,8 @@ class _KartuGrafikPerkembangan extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final avg = anak.rataRata ?? 0.0;
+    final rata = anak.rataRata;
+    final h = anak.historiPerkembangan;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -416,7 +417,7 @@ class _KartuGrafikPerkembangan extends StatelessWidget {
                     textBaseline: TextBaseline.alphabetic,
                     children: [
                       Text(
-                        avg.toStringAsFixed(1),
+                        rata == null ? '-' : rata.toStringAsFixed(1),
                         style: const TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.w800,
@@ -424,26 +425,28 @@ class _KartuGrafikPerkembangan extends StatelessWidget {
                           letterSpacing: -0.5,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2.5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFECFDF5),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: const Color(0xFFA7F3D0)),
-                        ),
-                        child: Text(
-                          anak.predikat,
-                          style: const TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF059669),
+                      if (rata != null) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2.5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFECFDF5),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: const Color(0xFFA7F3D0)),
+                          ),
+                          child: Text(
+                            anak.predikat,
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF059669),
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ],
@@ -463,64 +466,50 @@ class _KartuGrafikPerkembangan extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 12),
-          const Divider(height: 1, color: kBorder),
-          const SizedBox(height: 12),
-
-          // Label dan penjelasan grafik
-          Row(
-            children: [
-              const Icon(Icons.show_chart, size: 16, color: kBrand),
-              const SizedBox(width: 6),
-              Text(
-                'Grafik Perkembangan Berkala',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: kBrandSoft,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: const Text(
-                  'Tren Positif ↑',
-                  style: TextStyle(
-                    fontSize: 10.5,
+          if (h.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            const Divider(height: 1, color: kBorder),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                const Icon(Icons.show_chart, size: 16, color: kBrand),
+                const SizedBox(width: 6),
+                Text(
+                  'Grafik Perkembangan Berkala',
+                  style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: kBrand,
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Evaluasi berkala mencakup Ulangan Harian (UH), Penilaian Tengah Semester (PTS/UTS), dan Penilaian Akhir Semester (PAS).',
-            style: TextStyle(fontSize: 11, color: kMuted, height: 1.3),
-          ),
-          const SizedBox(height: 14),
-
-          // Komponen Visual Chart
-          if (anak.historiPerkembangan.isNotEmpty)
+                const Spacer(),
+                if (h.length > 1 && h.last >= h.first)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: kBrandSoft,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text(
+                      'Tren Positif ↑',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        color: kBrand,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 14),
             TrendChartWidget(
-              values: anak.historiPerkembangan,
+              values: h,
               labels: anak.labelPerkembangan.isNotEmpty
                   ? anak.labelPerkembangan
-                  : const ['UH 1', 'UH 2', 'PTS', 'UH 3', 'PAS'],
-            )
-          else
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
-                child: Text(
-                  'Data evaluasi berkala belum cukup untuk grafik.',
-                  style: TextStyle(color: kMuted, fontSize: 12),
-                ),
-              ),
+                  : [for (var i = 1; i <= h.length; i++) '$i'],
             ),
+          ],
         ],
       ),
     );
@@ -593,8 +582,7 @@ class _KartuCatatanKehadiran extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    anak.catatanWali ??
-                        'Ananda aktif dan berpartisipasi dengan baik dalam kegiatan belajar mengajar.',
+                    anak.catatanWali ?? 'Belum ada catatan dari wali kelas.',
                     style: const TextStyle(
                       fontSize: 12.5,
                       fontStyle: FontStyle.italic,
@@ -645,14 +633,15 @@ class _KartuDaftarNilai extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                const Text(
-                  'SKM: 75',
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
-                    color: kMuted,
+                if (anak.daftarNilai.isNotEmpty)
+                  Text(
+                    'SKM: ${anak.daftarNilai.first.skm}',
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: kMuted,
+                    ),
                   ),
-                ),
               ],
             ),
           ),
@@ -699,6 +688,16 @@ class _KartuDaftarNilai extends StatelessWidget {
               ],
             ),
           ),
+          if (anak.daftarNilai.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(20),
+              child: Center(
+                child: Text(
+                  'Belum ada nilai untuk semester ini.',
+                  style: TextStyle(color: kMuted, fontSize: 12.5),
+                ),
+              ),
+            ),
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),

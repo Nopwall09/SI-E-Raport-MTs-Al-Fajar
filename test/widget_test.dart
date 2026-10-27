@@ -3,11 +3,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:si_e_rapor_mts_al_fajar/app/app.dart';
 
+import 'package:si_e_rapor_mts_al_fajar/features/wali_murid/data/wali_murid_repository.dart';
+import 'package:si_e_rapor_mts_al_fajar/features/wali_murid/presentation/wali_murid_providers.dart';
+
 import 'helpers/test_overrides.dart';
 
-Future<void> _login(WidgetTester tester, String username) async {
+Future<void> _login(
+  WidgetTester tester,
+  String username, {
+  List<Override> extra = const [],
+}) async {
   await tester.pumpWidget(
-    ProviderScope(overrides: testOverrides(), child: const EraporApp()),
+    ProviderScope(
+      overrides: [...testOverrides(), ...extra],
+      child: const EraporApp(),
+    ),
   );
   await tester.pumpAndSettle();
 
@@ -98,6 +108,34 @@ void main() {
       expect(find.text('Perkembangan Saya'), findsWidgets);
       expect(find.text('Muhammad Farhan Al-Ghifari'), findsOneWidget);
       expect(find.text('Rapor'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'anak tanpa nilai: tidak ada data karangan, tampil pesan kosong',
+    (tester) async {
+      await _login(
+        tester,
+        'wali',
+        extra: [
+          perkembanganAnakProvider.overrideWith(
+            (ref) async => const <AnakModel>[
+              AnakModel(id: 1, nama: 'Anak Baru', nis: '1', kelas: 'VII-A'),
+            ],
+          ),
+        ],
+      );
+
+      expect(find.text('Anak Baru'), findsWidgets);
+      expect(find.text('Grafik Perkembangan Berkala'), findsNothing);
+      expect(find.text('Tren Positif ↑'), findsNothing);
+      expect(find.textContaining('Wali:'), findsNothing);
+      await tester.scrollUntilVisible(
+        find.text('Belum ada nilai untuk semester ini.'),
+        300,
+      );
+      expect(find.text('Belum ada nilai untuk semester ini.'), findsOneWidget);
+      expect(find.text('Belum ada catatan dari wali kelas.'), findsOneWidget);
     },
   );
 }
