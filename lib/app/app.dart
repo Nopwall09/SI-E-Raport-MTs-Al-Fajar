@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../features/notifikasi/notifikasi_penjaga.dart';
+import '../features/notifikasi/notifikasi_providers.dart';
 import 'router.dart';
 import 'theme.dart';
 
@@ -13,6 +15,9 @@ class EraporApp extends ConsumerWidget {
       title: 'E-Raport MTs Al Fajar',
       theme: buildTheme(),
       routerConfig: ref.watch(routerProvider),
+      scaffoldMessengerKey: pesanKey,
+      builder: (context, child) =>
+          NotifikasiPenjaga(child: child ?? const SizedBox.shrink()),
     );
   }
 }

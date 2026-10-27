@@ -8,6 +8,8 @@ Dipakai untuk membuat ulang database yang sama.
 | `migrations/..._init_schema.sql` | 12 tabel sesuai ERD di Figma, fungsi helper, `get_my_profile()`, RLS per role |
 | `migrations/..._seed_referensi_dan_progres_nilai.sql` | tingkat 7/8/9, tahun ajaran aktif, `admin_progres_input_nilai()` |
 | `migrations/..._sprint12_ganti_password_dan_rapor.sql` | kolom `users.must_change_password`, RPC `selesai_ganti_password()`, trigger yang membuat 2 baris rapor per pendaftaran kelas (+ backfill) |
+| `migrations/..._device_token.sql` | tabel `device_token` (token FCM per perangkat, RLS: hanya milik sendiri) dan RPC `daftarkan_device_token()` |
+| `functions/kirim-notifikasi-rapor/` | Kirim notifikasi "rapor final" lewat FCM ke siswa dan wali murid satu kelas; hanya wali kelas kelas itu yang boleh memanggil; butuh secret `FIREBASE_SERVICE_ACCOUNT` |
 | `functions/admin-create-user/` | Edge Function pembuat akun (butuh service role, hanya admin yang boleh memanggil) |
 | `functions/admin-reset-password/` | Reset password pengguna ke password sementara acak, menandai wajib ganti |
 | `functions/admin-import-siswa/` | Impor siswa per batch (maks. 100 baris): membuat akun siswa (username = NIS), data siswa, dan pendaftaran kelas; idempoten per NIS |
@@ -19,6 +21,9 @@ Dipakai untuk membuat ulang database yang sama.
 2. Deploy fungsi setelah migration (fungsi memakai kolom `must_change_password`):
    `supabase functions deploy admin-create-user admin-reset-password admin-import-siswa`
    (`verify_jwt` tetap aktif; fungsi memeriksa sendiri bahwa pemanggil adalah admin).
+   Untuk notifikasi: `supabase functions deploy kirim-notifikasi-rapor`, lalu isi secret
+   `FIREBASE_SERVICE_ACCOUNT` dengan seluruh isi berkas kunci layanan Firebase
+   (Dashboard, Edge Functions, Secrets). Berkas kunci itu jangan masuk repo.
 3. Opsional, hanya untuk pengembangan: jalankan `seed.sql` untuk akun dan data contoh.
 4. Ubah URL dan publishable key bawaan di `lib/core/config/env.dart`.
 
