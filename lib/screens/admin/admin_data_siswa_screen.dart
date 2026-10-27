@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../app/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../widgets/motion.dart';
 import '../../features/admin/presentation/admin_providers.dart';
 import '../../features/admin/presentation/admin_widgets.dart';
@@ -65,6 +66,13 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Impor dari Excel',
+            icon: const Icon(Icons.upload_file),
+            onPressed: () => context.push('/admin/impor-siswa'),
+          ),
+        ],
       ),
       body:
           statusAsync(lista, () => ref.invalidate(adminSiswaProvider)) ??

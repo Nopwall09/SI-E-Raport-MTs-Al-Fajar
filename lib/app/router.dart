@@ -4,9 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../features/auth/domain/user.dart';
 import '../features/auth/presentation/auth_controller.dart';
+import '../features/auth/presentation/ganti_password_page.dart';
 import '../features/auth/presentation/login_page.dart';
 import '../features/auth/presentation/splash_page.dart';
 import '../screens/admin/admin_data_rapor_screen.dart';
+import '../screens/admin/admin_impor_siswa_screen.dart';
 import '../screens/admin/admin_mata_pelajaran_screen.dart';
 import '../screens/admin/admin_tahun_ajaran_screen.dart';
 import 'role_shell.dart';
@@ -28,6 +30,13 @@ String? redirectFor(AsyncValue<AppUser?> auth, String location) {
   if (user == null) {
     return location == '/login' ? null : '/login';
   }
+
+  // Password awal/reset wajib diganti dulu; halaman ini juga dibuka sukarela
+  // dari Profil, jadi tidak ditolak bila tidak wajib.
+  if (user.mustChangePassword) {
+    return location == '/ganti-password' ? null : '/ganti-password';
+  }
+  if (location == '/ganti-password') return null;
 
   if (location == '/splash' || location == '/login') return user.homePath;
   if (!location.startsWith(user.role.basePath)) return user.homePath;
@@ -74,12 +83,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/splash', builder: (context, state) => const SplashPage()),
       GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
       GoRoute(
+        path: '/ganti-password',
+        builder: (context, state) => const GantiPasswordPage(),
+      ),
+      GoRoute(
         path: '/admin/mapel',
         builder: (context, state) => const AdminMataPelajaranScreen(),
       ),
       GoRoute(
         path: '/admin/tahun-ajaran',
         builder: (context, state) => const AdminTahunAjaranScreen(),
+      ),
+      GoRoute(
+        path: '/admin/impor-siswa',
+        builder: (context, state) => const AdminImporSiswaScreen(),
       ),
       GoRoute(
         path: '/admin/rapor',

@@ -40,12 +40,16 @@ class AppUser {
     required this.name,
     required this.role,
     this.waliKelas,
+    this.mustChangePassword = false,
   });
 
   final String id;
   final String name;
   final UserRole role;
   final WaliKelasInfo? waliKelas;
+
+  /// Password awal atau hasil reset admin; wajib diganti sebelum memakai app.
+  final bool mustChangePassword;
 
   bool get isWaliKelas => waliKelas != null;
 
@@ -60,6 +64,7 @@ class AppUser {
       waliKelas: waliKelas is Map<String, dynamic>
           ? WaliKelasInfo.fromJson(waliKelas)
           : null,
+      mustChangePassword: json['must_change_password'] == true,
     );
   }
 }

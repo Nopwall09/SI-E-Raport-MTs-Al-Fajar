@@ -1,4 +1,4 @@
-﻿import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/config/env.dart';
 import '../../../core/error/app_exception.dart';
@@ -51,6 +51,25 @@ class SupabaseAuthRepository implements AuthRepository {
         return null;
       }
       throw error;
+    }
+  }
+
+  @override
+  Future<AppUser> gantiPassword(String passwordBaru) async {
+    try {
+      await _client.auth.updateUser(UserAttributes(password: passwordBaru));
+      await _client.rpc('selesai_ganti_password');
+      return await _loadProfile();
+    } on AuthException catch (e) {
+      // AppException.from membaca AuthException sebagai gagal login.
+      throw AppException(AppErrorType.validation, switch (e.code) {
+        'same_password' => 'Password baru harus berbeda dari password lama.',
+        'weak_password' =>
+          'Password terlalu lemah. Pakai kombinasi lebih panjang.',
+        _ => 'Gagal mengganti password. Coba lagi.',
+      });
+    } catch (e) {
+      throw AppException.from(e);
     }
   }
 

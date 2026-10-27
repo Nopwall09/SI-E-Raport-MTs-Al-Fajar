@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme.dart';
@@ -73,6 +74,54 @@ Future<bool> konfirmasiAksi(
     ),
   );
   return ya ?? false;
+}
+
+/// Menampilkan password sementara. Hanya muncul sekali: server tidak
+/// menyimpannya, jadi admin perlu menyalin atau mencatatnya sekarang.
+Future<void> tampilkanPasswordSementara(
+  BuildContext context, {
+  required String username,
+  required String password,
+}) {
+  return showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Password sementara'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Username: $username'),
+          const SizedBox(height: 8),
+          SelectableText(
+            password,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Catat sekarang, password ini tidak akan ditampilkan lagi. '
+            'Pengguna wajib menggantinya saat masuk.',
+            style: Theme.of(ctx).textTheme.bodySmall,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Clipboard.setData(ClipboardData(text: password)),
+          child: const Text('Salin'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('Selesai'),
+        ),
+      ],
+    ),
+  );
 }
 
 /// Konfirmasi aksi yang tidak bisa dibatalkan.

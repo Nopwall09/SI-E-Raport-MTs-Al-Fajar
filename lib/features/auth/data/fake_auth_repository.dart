@@ -59,6 +59,12 @@ class FakeAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<AppUser> gantiPassword(String passwordBaru) async {
+    await Future<void>.delayed(latency);
+    return _current!;
+  }
+
+  @override
   Future<void> logout() async {
     _current = null;
   }

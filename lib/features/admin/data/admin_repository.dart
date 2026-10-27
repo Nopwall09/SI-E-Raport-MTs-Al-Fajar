@@ -12,6 +12,7 @@ import '../../../models/mapel_model.dart';
 import '../../../models/siswa_model.dart';
 import '../../../models/tahun_ajaran_model.dart';
 import '../../../models/user_model.dart';
+import 'impor_siswa.dart';
 
 class TahunAjaranAktif {
   const TahunAjaranAktif(this.id, this.tahun, this.semester);
@@ -621,6 +622,30 @@ class AdminRepository {
         'no_hp': noHp,
       },
     );
+  }
+
+  /// Password sementara baru (tampil sekali); pengguna wajib menggantinya.
+  Future<String> resetPassword(String userId) async {
+    final res = await _db.functions.invoke(
+      'admin-reset-password',
+      body: {'user_id': userId},
+    );
+    return (res.data as Map)['password'] as String;
+  }
+
+  /// Satu batch (maks. 100 baris, batas di Edge Function). NIS yang sudah ada
+  /// dilewati server, jadi mengirim ulang batch yang sama aman.
+  Future<List<HasilImpor>> imporSiswa(List<BarisSiswa> baris) async {
+    final res = await _db.functions.invoke(
+      'admin-import-siswa',
+      body: {
+        'rows': [for (final b in baris) b.toJson()],
+      },
+    );
+    return [
+      for (final h in (res.data as Map)['hasil'] as List)
+        HasilImpor.fromJson(h as Map<String, dynamic>),
+    ];
   }
 
   // Relasi to-one dikembalikan PostgREST sebagai objek, to-many sebagai list.

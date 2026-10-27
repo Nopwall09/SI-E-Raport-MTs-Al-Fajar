@@ -38,6 +38,25 @@ void main() {
     );
   });
 
+  test('password wajib diganti: semua halaman dialihkan ke ganti-password', () {
+    const wajib = AppUser(
+      id: 'g3',
+      name: 'Baru',
+      role: UserRole.guru,
+      mustChangePassword: true,
+    );
+    expect(
+      redirectFor(const AsyncData(wajib), '/guru/beranda'),
+      '/ganti-password',
+    );
+    expect(redirectFor(const AsyncData(wajib), '/login'), '/ganti-password');
+    expect(redirectFor(const AsyncData(wajib), '/ganti-password'), isNull);
+  });
+
+  test('ganti password sukarela dari Profil tidak ditolak', () {
+    expect(redirectFor(const AsyncData(_guru), '/ganti-password'), isNull);
+  });
+
   test('tab wali kelas hanya untuk wali kelas', () {
     expect(
       redirectFor(const AsyncData(_guru), '/guru/wali-kelas'),
