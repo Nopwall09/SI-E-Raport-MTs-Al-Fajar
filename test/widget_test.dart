@@ -33,21 +33,33 @@ void main() {
     expect(find.widgetWithText(FilledButton, 'Masuk'), findsOneWidget);
   });
 
-  testWidgets('guru biasa masuk ke beranda tanpa tab wali kelas', (
+  testWidgets('guru biasa hanya melihat dashboard guru mapel', (
     tester,
   ) async {
     await _login(tester, 'guru');
 
     expect(find.text('Halo, Guru Contoh'), findsOneWidget);
     expect(find.text('Nilai'), findsWidgets);
-    expect(find.text('Wali kelas'), findsNothing);
+    expect(find.textContaining('Wali Kelas'), findsNothing);
   });
 
-  testWidgets('guru wali kelas melihat tab wali kelas', (tester) async {
+  testWidgets('guru wali kelas melihat dashboard gabungan di beranda', (
+    tester,
+  ) async {
     await _login(tester, 'walikelas');
 
     expect(find.text('Halo, Guru Wali Kelas'), findsOneWidget);
-    expect(find.text('Wali kelas'), findsWidgets);
+    expect(find.textContaining('Wali Kelas 7A'), findsWidgets);
+    expect(find.text('Siswa kelas 7A'), findsOneWidget);
+    expect(find.text('Kelengkapan kelas'), findsOneWidget);
+
+    // Gulir ke bagian detail wali kelas di dalam list
+    await tester.scrollUntilVisible(
+      find.text('Progres Nilai Kelas 7A (Wali Kelas)'),
+      300,
+    );
+    expect(find.text('Progres Nilai Kelas 7A (Wali Kelas)'), findsOneWidget);
+    expect(find.text('Siswa Contoh A'), findsOneWidget);
   });
 
   testWidgets('password salah menampilkan pesan dan tetap di login', (

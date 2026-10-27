@@ -57,14 +57,14 @@ void main() {
     expect(redirectFor(const AsyncData(_guru), '/ganti-password'), isNull);
   });
 
-  test('tab wali kelas hanya untuk wali kelas', () {
+  test('halaman terpisah wali kelas dialihkan ke beranda gabungan', () {
     expect(
       redirectFor(const AsyncData(_guru), '/guru/wali-kelas'),
       '/guru/beranda',
     );
     expect(
       redirectFor(const AsyncData(_waliKelas), '/guru/wali-kelas'),
-      isNull,
+      '/guru/beranda',
     );
   });
 }

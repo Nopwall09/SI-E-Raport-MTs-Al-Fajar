@@ -6,7 +6,6 @@ import '../features/auth/presentation/profile_page.dart';
 import '../features/dashboard/presentation/dashboard_page.dart';
 import '../features/dashboard/presentation/guru_beranda_page.dart';
 import '../features/nilai/presentation/nilai_page.dart';
-import '../features/wali_kelas/presentation/wali_kelas_page.dart';
 import '../features/wali_murid/presentation/wali_murid_page.dart';
 import '../screens/admin/admin_dashboard_screen.dart';
 import '../screens/admin/admin_data_guru_screen.dart';
@@ -138,14 +137,6 @@ List<AppTab> tabsFor(UserRole role) {
           icon: Icons.edit_note_outlined,
           selectedIcon: Icons.edit_note,
           builder: () => const NilaiPage(),
-        ),
-        AppTab(
-          slug: 'wali-kelas',
-          label: 'Wali kelas',
-          icon: Icons.groups_outlined,
-          selectedIcon: Icons.groups,
-          onlyWaliKelas: true,
-          builder: () => const WaliKelasPage(),
         ),
         _profil(),
       ];
