@@ -49,3 +49,6 @@ app.*.map.json
 
 # Kunci pribadi Firebase tidak boleh masuk repo
 *-firebase-adminsdk-*.json
+
+# Konfigurasi Firebase per pengembang: unduh dari Firebase Console (Project settings)
+android/app/google-services.json
