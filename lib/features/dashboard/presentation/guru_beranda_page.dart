@@ -10,6 +10,7 @@ import '../../auth/presentation/auth_controller.dart';
 import '../../nilai/data/nilai_repository.dart';
 import '../../nilai/presentation/input_nilai_page.dart';
 import '../../nilai/presentation/nilai_providers.dart';
+import '../../wali_kelas/data/absensi_pdf_service.dart';
 import '../../wali_kelas/data/wali_kelas_repository.dart';
 import '../../wali_kelas/presentation/presensi_form.dart';
 import '../../wali_kelas/presentation/wali_kelas_providers.dart';
@@ -59,8 +60,10 @@ class GuruBerandaPage extends ConsumerWidget {
         },
         child: _isi(
           context: context,
+          ref: ref,
           theme: theme,
           nama: user?.name ?? '',
+          kelasId: user?.waliKelas?.kelasId,
           waliKelas: user?.waliKelas?.namaKelas,
           periode: periode,
           daftarPenugasan: penugasanAsync.value ?? const [],
@@ -73,8 +76,10 @@ class GuruBerandaPage extends ConsumerWidget {
 
   Widget _isi({
     required BuildContext context,
+    required WidgetRef ref,
     required ThemeData theme,
     required String nama,
+    required int? kelasId,
     required String? waliKelas,
     required String? periode,
     required List<PenugasanProgres> daftarPenugasan,
@@ -303,36 +308,152 @@ class GuruBerandaPage extends ConsumerWidget {
             style: const TextStyle(fontSize: 12, color: kMuted),
           ),
           const SizedBox(height: 12),
+          // Ringkasan status dan aksi kelengkapan kelas
+          if (totalSiswa > 0) ...[
+            Builder(builder: (context) {
+              final isSemuaFinal =
+                  siswaWali.isNotEmpty && siswaWali.every((s) => s.isFinal);
+              final isSemuaMenungguAcc = siswaWali.isNotEmpty &&
+                  siswaWali.every((s) => s.isMenungguAcc);
 
-          // Ringkasan kelengkapan kelas
-          if (totalSiswa > 0)
-            Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(kRadiusControl),
-                border: Border.all(color: kBorder),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    siswaLengkap == totalSiswa
-                        ? Icons.check_circle_outline
-                        : Icons.info_outline,
-                    color: siswaLengkap == totalSiswa ? kBrand : const Color(0xFFD97706),
-                    size: 18,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '$siswaLengkap dari $totalSiswa siswa memiliki nilai lengkap dari semua mapel.',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              Color statusBg;
+              Color statusBorder;
+              Color statusIconColor;
+              IconData statusIcon;
+              String statusTitle;
+              String statusDesc;
+
+              if (isSemuaFinal) {
+                statusBg = const Color(0xFFECFDF5);
+                statusBorder = const Color(0xFF10B981);
+                statusIconColor = const Color(0xFF059669);
+                statusIcon = Icons.verified;
+                statusTitle = 'Rapor Telah Di-ACC (Final)';
+                statusDesc =
+                    'Rapor kelas ini telah disahkan resmi dan terkunci.';
+              } else if (isSemuaMenungguAcc) {
+                statusBg = const Color(0xFFFFFBEB);
+                statusBorder = const Color(0xFFF59E0B);
+                statusIconColor = const Color(0xFFD97706);
+                statusIcon = Icons.hourglass_top_outlined;
+                statusTitle = 'Menunggu ACC Kepala Madrasah';
+                statusDesc =
+                    'Verifikasi telah diajukan. Menunggu pengesahan admin/pimpinan.';
+              } else {
+                statusBg = Colors.white;
+                statusBorder = kBorder;
+                statusIconColor =
+                    siswaLengkap == totalSiswa ? kBrand : const Color(0xFFD97706);
+                statusIcon = siswaLengkap == totalSiswa
+                    ? Icons.check_circle_outline
+                    : Icons.info_outline;
+                statusTitle = 'Status Rapor: Draft Pengisian';
+                statusDesc =
+                    '$siswaLengkap dari $totalSiswa siswa memiliki nilai lengkap.';
+              }
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: statusBg,
+                  borderRadius: BorderRadius.circular(kRadiusCard),
+                  border: Border.all(color: statusBorder),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(statusIcon, color: statusIconColor, size: 20),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                statusTitle,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  color: statusIconColor,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                statusDesc,
+                                style: const TextStyle(
+                                  fontSize: 11.5,
+                                  color: kText,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-            ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        // Tombol Cetak Rekap Absensi PDF (UC-19)
+                        OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            textStyle: const TextStyle(fontSize: 12),
+                          ),
+                          onPressed: () async {
+                            final ta = ref
+                                .read(tahunAjaranAktifProvider)
+                                .valueOrNull;
+                            await AbsensiPdfService.cetakAtauPratinjauPdf(
+                              siswa: siswaWali,
+                              kelasNama: waliKelas ?? 'Kelas',
+                              semester: ta?.semester ?? 'ganjil',
+                              tahunAjaran: ta?.tahun ?? '2026/2027',
+                              waliKelasNama: nama,
+                            );
+                          },
+                          icon: const Icon(
+                            Icons.picture_as_pdf_outlined,
+                            size: 16,
+                          ),
+                          label: const Text('Cetak Rekap Presensi'),
+                        ),
+
+                        // Tombol Ajukan ACC Rapor (jika masih draft)
+                        if (!isSemuaFinal && !isSemuaMenungguAcc && kelasId != null)
+                          FilledButton.icon(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: kBrand,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              textStyle: const TextStyle(fontSize: 12),
+                            ),
+                            onPressed: () => _konfirmasiAjukanAcc(
+                              context: context,
+                              ref: ref,
+                              kelasId: kelasId,
+                              waliKelasNama: waliKelas ?? '',
+                              belumLengkap: totalSiswa - siswaLengkap,
+                            ),
+                            icon: const Icon(Icons.send_outlined, size: 16),
+                            label: const Text('Ajukan ACC Rapor'),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ],
 
           if (siswaWali.isEmpty)
             Container(
@@ -360,6 +481,69 @@ class GuruBerandaPage extends ConsumerWidget {
         ],
       ],
     );
+  }
+
+  static Future<void> _konfirmasiAjukanAcc({
+    required BuildContext context,
+    required WidgetRef ref,
+    required int kelasId,
+    required String waliKelasNama,
+    required int belumLengkap,
+  }) async {
+    final setuju = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Ajukan ACC Rapor?'),
+        content: Text(
+          belumLengkap > 0
+              ? 'Peringatan: Ada $belumLengkap siswa yang nilainya belum lengkap dari semua mapel.\n\nApakah Anda yakin ingin tetap mengajukan verifikasi rapor kelas $waliKelasNama ke Kepala Madrasah / Admin?'
+              : 'Seluruh nilai kelas $waliKelasNama sudah lengkap. Rapor akan diajukan ke Kepala Madrasah / Admin untuk diverifikasi dan di-ACC.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: kBrand),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Ajukan Sekarang'),
+          ),
+        ],
+      ),
+    );
+
+    if (setuju != true || !context.mounted) return;
+
+    final ta = ref.read(tahunAjaranAktifProvider).valueOrNull;
+    if (ta == null) return;
+
+    try {
+      await ref.read(waliKelasRepositoryProvider).ajukanAcc(
+            kelasId: kelasId,
+            semester: ta.semester,
+          );
+      ref.invalidate(progresKelasProvider);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: kBrand,
+            content: Text(
+              'Pengajuan ACC berhasil dikirim ke Admin / Kepala Madrasah.',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text('Gagal mengajukan ACC: $e'),
+          ),
+        );
+      }
+    }
   }
 }
 

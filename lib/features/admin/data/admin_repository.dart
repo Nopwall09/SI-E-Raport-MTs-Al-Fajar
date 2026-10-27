@@ -371,13 +371,27 @@ class AdminRepository {
                 .count(CountOption.exact))
             .count;
     final ksIds = [for (final a in anggota) a['id'] as int];
-    final nilai = ksIds.isEmpty
-        ? const <Map<String, dynamic>>[]
-        : await _db
-              .from('detnilai')
-              .select('kelas_siswa_id')
-              .inFilter('kelas_siswa_id', ksIds)
-              .eq('semester', semester);
+    final lanjutan = ksIds.isEmpty
+        ? const [<Map<String, dynamic>>[], <Map<String, dynamic>>[]]
+        : await Future.wait([
+            _db
+                .from('detnilai')
+                .select('kelas_siswa_id')
+                .inFilter('kelas_siswa_id', ksIds)
+                .eq('semester', semester),
+            _db
+                .from('rapor')
+                .select('kelas_siswa_id,status')
+                .inFilter('kelas_siswa_id', ksIds)
+                .eq('semester', semester),
+          ]);
+    final nilai = lanjutan[0];
+    final raporList = lanjutan[1];
+    final statusMap = {
+      for (final r in raporList)
+        r['kelas_siswa_id'] as int: (r['status'] as String?) ?? 'draft',
+    };
+
     final terisi = <int, int>{};
     for (final n in nilai) {
       terisi.update(
@@ -396,10 +410,53 @@ class AdminRepository {
           semester: semester,
           mapelSelesai: math.min(terisi[a['id'] as int] ?? 0, total),
           totalMapel: total,
+          statusRapor: statusMap[a['id'] as int] ?? 'draft',
         ),
     ];
     hasil.sort((a, b) => a.namaSiswa.compareTo(b.namaSiswa));
     return hasil;
+  }
+
+  /// Wali kelas atau admin mengajukan rapor ke tahap verifikasi (menunggu ACC).
+  Future<void> ajukanAccRapor({
+    required int kelasId,
+    required String semester,
+  }) => _db.rpc('ajukan_acc_rapor', params: {
+    'p_kelas_id': kelasId,
+    'p_semester': semester,
+  });
+
+  /// Mengesahkan (ACC) dan memfinalisasi rapor kelas.
+  Future<void> finalisasiRapor({
+    required int kelasId,
+    required String semester,
+  }) => _db.rpc('finalisasi_rapor', params: {
+    'p_kelas_id': kelasId,
+    'p_semester': semester,
+  });
+
+  /// Membuka kunci rapor agar bisa diedit kembali (khusus admin).
+  Future<void> bukaKunciRapor({
+    required int kelasId,
+    required String semester,
+  }) => _db.rpc('buka_kunci_rapor', params: {
+    'p_kelas_id': kelasId,
+    'p_semester': semester,
+  });
+
+  /// Memicu pengiriman notifikasi FCM ke siswa dan wali murid.
+  Future<void> kirimNotifikasiFinal({
+    required int kelasId,
+    required String semester,
+  }) async {
+    try {
+      await _db.functions.invoke('kirim-notifikasi-rapor', body: {
+        'kelas_id': kelasId,
+        'semester': semester,
+      });
+    } catch (_) {
+      // Notifikasi gagal tidak boleh mengganggu alur sistem
+    }
   }
 
   // ---- Mata pelajaran ----

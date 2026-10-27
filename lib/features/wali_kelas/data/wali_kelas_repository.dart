@@ -17,6 +17,7 @@ class SiswaProgres {
     this.izin = 0,
     this.alpa = 0,
     this.catatan,
+    this.status = 'draft',
     this.terkunci = false,
   });
 
@@ -31,8 +32,14 @@ class SiswaProgres {
   final int alpa;
   final String? catatan;
 
-  /// Rapor sudah final: presensi dan catatan terkunci.
+  /// Status rapor: 'draft', 'menunggu_acc', atau 'final'.
+  final String status;
+
+  /// Rapor sudah final atau diajukan: presensi dan catatan terkunci.
   final bool terkunci;
+
+  bool get isMenungguAcc => status == 'menunggu_acc';
+  bool get isFinal => status == 'final';
 
   int get terisi => mapel.where((m) => m.nilai != null).length;
 }
@@ -105,7 +112,9 @@ class WaliKelasRepository {
           izin: (rapor[s['id']]?['izin'] as int?) ?? 0,
           alpa: (rapor[s['id']]?['alpa'] as int?) ?? 0,
           catatan: rapor[s['id']]?['catatan'] as String?,
-          terkunci: rapor[s['id']]?['status'] == 'final',
+          status: (rapor[s['id']]?['status'] as String?) ?? 'draft',
+          terkunci: rapor[s['id']]?['status'] == 'final' ||
+              rapor[s['id']]?['status'] == 'menunggu_acc',
         ),
     ];
     daftar.sort((a, b) => a.nama.compareTo(b.nama));
@@ -130,4 +139,46 @@ class WaliKelasRepository {
     'alpa': alpa,
     'catatan': catatan,
   }, onConflict: 'kelas_siswa_id,semester');
+
+  /// Wali kelas mengajukan verifikasi/ACC rapor kelas ke Kepala Madrasah/Admin.
+  Future<void> ajukanAcc({
+    required int kelasId,
+    required String semester,
+  }) => _db.rpc('ajukan_acc_rapor', params: {
+    'p_kelas_id': kelasId,
+    'p_semester': semester,
+  });
+
+  /// Mengesahkan (ACC) dan mengunci rapor secara permanen.
+  Future<void> finalisasiRapor({
+    required int kelasId,
+    required String semester,
+  }) => _db.rpc('finalisasi_rapor', params: {
+    'p_kelas_id': kelasId,
+    'p_semester': semester,
+  });
+
+  /// Buka kunci rapor kembali ke draft (khusus admin bila perlu revisi nilai).
+  Future<void> bukaKunciRapor({
+    required int kelasId,
+    required String semester,
+  }) => _db.rpc('buka_kunci_rapor', params: {
+    'p_kelas_id': kelasId,
+    'p_semester': semester,
+  });
+
+  /// Mengirim notifikasi push FCM ke seluruh siswa dan wali murid di kelas.
+  Future<void> kirimNotifikasiFinal({
+    required int kelasId,
+    required String semester,
+  }) async {
+    try {
+      await _db.functions.invoke('kirim-notifikasi-rapor', body: {
+        'kelas_id': kelasId,
+        'semester': semester,
+      });
+    } catch (_) {
+      // Gagal notifikasi tidak membatalkan finalisasi
+    }
+  }
 }

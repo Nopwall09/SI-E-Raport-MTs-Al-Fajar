@@ -9,6 +9,7 @@ Dipakai untuk membuat ulang database yang sama.
 | `migrations/..._seed_referensi_dan_progres_nilai.sql` | tingkat 7/8/9, tahun ajaran aktif, `admin_progres_input_nilai()` |
 | `migrations/..._sprint12_ganti_password_dan_rapor.sql` | kolom `users.must_change_password`, RPC `selesai_ganti_password()`, trigger yang membuat 2 baris rapor per pendaftaran kelas (+ backfill) |
 | `migrations/..._device_token.sql` | tabel `device_token` (token FCM per perangkat, RLS: hanya milik sendiri) dan RPC `daftarkan_device_token()` |
+| `migrations/..._finalisasi_dan_penguncian_rapor.sql` | alur ACC rapor (`menunggu_acc`, `final`), RPC `ajukan_acc_rapor()`, `finalisasi_rapor()`, `buka_kunci_rapor()`, dan trigger penguncian nilai `detnilai` |
 | `functions/kirim-notifikasi-rapor/` | Kirim notifikasi "rapor final" lewat FCM ke siswa dan wali murid satu kelas; hanya wali kelas kelas itu yang boleh memanggil; butuh secret `FIREBASE_SERVICE_ACCOUNT` |
 | `functions/admin-create-user/` | Edge Function pembuat akun (butuh service role, hanya admin yang boleh memanggil) |
 | `functions/admin-reset-password/` | Reset password pengguna ke password sementara acak, menandai wajib ganti |

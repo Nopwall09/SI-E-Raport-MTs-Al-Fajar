@@ -9,6 +9,8 @@ import '../../core/widgets/error_view.dart';
 import '../../features/admin/data/admin_repository.dart';
 import '../../features/admin/presentation/admin_providers.dart';
 import '../../features/admin/presentation/admin_widgets.dart';
+import '../../features/wali_kelas/data/absensi_pdf_service.dart';
+import '../../features/wali_kelas/presentation/wali_kelas_providers.dart';
 import '../../models/data_rapor_model.dart';
 import '../../widgets/media_picker_dialog.dart';
 import '../../widgets/motion.dart';
@@ -208,7 +210,9 @@ class _AdminDataRaporScreenState extends ConsumerState<AdminDataRaporScreen> {
                 ),
               ],
             ),
-          ),
+          )
+        else if (semua.isNotEmpty)
+          _headerStatusAcc(semua, kelas, kunci),
         Expanded(
           child: list.isEmpty
               ? Center(
@@ -343,6 +347,303 @@ class _AdminDataRaporScreenState extends ConsumerState<AdminDataRaporScreen> {
     }
   }
 
+  Widget _headerStatusAcc(
+    List<DataRaporModel> semua,
+    Opsi kelas,
+    ({int kelasId, String kelasNama, String semester}) kunci,
+  ) {
+    final isSemuaFinal = semua.isNotEmpty && semua.every((r) => r.isFinal);
+    final isSemuaMenungguAcc =
+        semua.isNotEmpty && semua.every((r) => r.isMenungguAcc);
+    final siapCount = semua.where((r) => r.isSiap).length;
+
+    Color bg;
+    Color border;
+    Color iconColor;
+    IconData icon;
+    String title;
+    String subtitle;
+
+    if (isSemuaFinal) {
+      bg = const Color(0xFFECFDF5);
+      border = const Color(0xFF10B981);
+      iconColor = const Color(0xFF059669);
+      icon = Icons.verified;
+      title = 'Rapor Kelas Telah Di-ACC (Final)';
+      subtitle = 'Nilai dan presensi telah disahkan resmi dan dikunci permanen.';
+    } else if (isSemuaMenungguAcc) {
+      bg = const Color(0xFFFFFBEB);
+      border = const Color(0xFFF59E0B);
+      iconColor = const Color(0xFFD97706);
+      icon = Icons.hourglass_top_outlined;
+      title = 'Menunggu ACC Admin / Kepala Madrasah';
+      subtitle =
+          'Wali kelas telah mengajukan verifikasi ($siapCount/${semua.length} siswa siap nilai).';
+    } else {
+      bg = Colors.white;
+      border = kBorder;
+      iconColor = siapCount == semua.length ? kBrand : const Color(0xFFD97706);
+      icon = siapCount == semua.length
+          ? Icons.check_circle_outline
+          : Icons.info_outline;
+      title = 'Status Rapor: Draft Pengisian';
+      subtitle = '$siapCount dari ${semua.length} siswa siap nilai rapor.';
+    }
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(kRadiusCard),
+        border: Border.all(color: border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, color: iconColor, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12.5,
+                        color: iconColor,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(fontSize: 11, color: kText),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              // Cetak Rekap Presensi PDF
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  textStyle: const TextStyle(fontSize: 11.5),
+                ),
+                onPressed: () => _cetakAbsensiKelasAdmin(kelas, kunci),
+                icon: const Icon(Icons.picture_as_pdf_outlined, size: 15),
+                label: const Text('Cetak Rekap Presensi PDF'),
+              ),
+
+              // Tombol ACC & Finalisasi jika belum final
+              if (!isSemuaFinal)
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: kBrand,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    textStyle: const TextStyle(fontSize: 11.5),
+                  ),
+                  onPressed: () => _konfirmasiFinalisasiAdmin(
+                    kelas: kelas,
+                    kunci: kunci,
+                    belumLengkap: semua.length - siapCount,
+                  ),
+                  icon: const Icon(Icons.check_circle_outline, size: 15),
+                  label: Text(
+                    isSemuaMenungguAcc ? 'ACC & Sahkan Rapor' : 'Finalisasi Rapor',
+                  ),
+                ),
+
+              // Tombol Buka Kunci (Revisi) jika sudah final
+              if (isSemuaFinal)
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFFD97706),
+                    side: const BorderSide(color: Color(0xFFD97706)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    textStyle: const TextStyle(fontSize: 11.5),
+                  ),
+                  onPressed: () => _konfirmasiBukaKunciAdmin(kelas, kunci),
+                  icon: const Icon(Icons.lock_open_outlined, size: 15),
+                  label: const Text('Buka Kunci (Revisi)'),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _cetakAbsensiKelasAdmin(
+    Opsi kelas,
+    ({int kelasId, String kelasNama, String semester}) kunci,
+  ) async {
+    try {
+      final ta = await ref.read(tahunAjaranAktifProvider.future);
+      final repo = ref.read(waliKelasRepositoryProvider);
+      final siswaList = await repo.progres(
+        kelasId: kelas.id,
+        semester: kunci.semester,
+      );
+
+      await AbsensiPdfService.cetakAtauPratinjauPdf(
+        siswa: siswaList,
+        kelasNama: kelas.label,
+        semester: kunci.semester,
+        tahunAjaran: ta.tahun,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text('Gagal mencetak presensi: $e'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _konfirmasiFinalisasiAdmin({
+    required Opsi kelas,
+    required ({int kelasId, String kelasNama, String semester}) kunci,
+    required int belumLengkap,
+  }) async {
+    final setuju = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('ACC & Finalisasi Kelas ${kelas.label}?'),
+        content: Text(
+          belumLengkap > 0
+              ? 'Peringatan: Ada $belumLengkap siswa yang nilainya belum lengkap dari semua mapel.\n\nApakah Anda yakin ingin tetap mengesahkan (ACC) dan memfinalisasi rapor kelas ini?'
+              : 'Setelah di-ACC dan difinalisasi, seluruh nilai & presensi akan dikunci permanen, serta notifikasi rapor siap akan dikirimkan ke siswa dan wali murid.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: kBrand),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('ACC & Finalisasi'),
+          ),
+        ],
+      ),
+    );
+
+    if (setuju != true || !mounted) return;
+
+    try {
+      final repo = ref.read(adminRepositoryProvider);
+      await repo.finalisasiRapor(
+        kelasId: kelas.id,
+        semester: kunci.semester,
+      );
+      // Memicu notifikasi FCM
+      await repo.kirimNotifikasiFinal(
+        kelasId: kelas.id,
+        semester: kunci.semester,
+      );
+      ref.invalidate(adminRaporProvider(kunci));
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: kBrand,
+            content: Text(
+              'Rapor kelas ${kelas.label} berhasil di-ACC dan difinalisasi.',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text('Gagal memfinalisasi rapor: $e'),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _konfirmasiBukaKunciAdmin(
+    Opsi kelas,
+    ({int kelasId, String kelasNama, String semester}) kunci,
+  ) async {
+    final setuju = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Buka Kunci Rapor Kelas ${kelas.label}?'),
+        content: const Text(
+          'Membuka kunci akan mengembalikan status rapor ke Draft sehingga guru pengampu dapat memperbaiki/merevisi nilai.\n\nLanjutkan pembukaan kunci?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFD97706),
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Buka Kunci'),
+          ),
+        ],
+      ),
+    );
+
+    if (setuju != true || !mounted) return;
+
+    try {
+      await ref.read(adminRepositoryProvider).bukaKunciRapor(
+            kelasId: kelas.id,
+            semester: kunci.semester,
+          );
+      ref.invalidate(adminRaporProvider(kunci));
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: kBrand,
+            content: Text(
+              'Kunci rapor kelas ${kelas.label} berhasil dibuka untuk revisi.',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text('Gagal membuka kunci rapor: $e'),
+          ),
+        );
+      }
+    }
+  }
+
   Widget _kartu(DataRaporModel r) {
     return GestureDetector(
       // Context menu: tekan lama.
@@ -383,7 +684,13 @@ class _AdminDataRaporScreenState extends ConsumerState<AdminDataRaporScreen> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: r.isSiap ? kBrandSoft : kField,
+                    color: r.isFinal
+                        ? const Color(0xFFECFDF5)
+                        : r.isMenungguAcc
+                            ? const Color(0xFFFFFBEB)
+                            : r.isSiap
+                                ? kBrandSoft
+                                : kField,
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
@@ -391,7 +698,13 @@ class _AdminDataRaporScreenState extends ConsumerState<AdminDataRaporScreen> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: r.isSiap ? kBrand : kMuted,
+                      color: r.isFinal
+                          ? const Color(0xFF059669)
+                          : r.isMenungguAcc
+                              ? const Color(0xFFD97706)
+                              : r.isSiap
+                                  ? kBrand
+                                  : kMuted,
                     ),
                   ),
                 ),
