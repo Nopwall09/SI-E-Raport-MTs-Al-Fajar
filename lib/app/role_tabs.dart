@@ -6,6 +6,8 @@ import '../features/auth/presentation/profile_page.dart';
 import '../features/dashboard/presentation/dashboard_page.dart';
 import '../features/dashboard/presentation/guru_beranda_page.dart';
 import '../features/nilai/presentation/nilai_page.dart';
+import '../features/siswa/presentation/siswa_beranda_page.dart';
+import '../features/siswa/presentation/siswa_rapor_page.dart';
 import '../features/wali_kelas/presentation/wali_kelas_page.dart';
 import '../features/wali_murid/presentation/wali_murid_page.dart';
 import '../screens/admin/admin_dashboard_screen.dart';
@@ -151,13 +153,19 @@ List<AppTab> tabsFor(UserRole role) {
       ];
     case UserRole.siswa:
       return [
-        _beranda(),
-        _segera(
+        AppTab(
+          slug: 'beranda',
+          label: 'Beranda',
+          icon: Icons.home_outlined,
+          selectedIcon: Icons.home,
+          builder: () => const SiswaBerandaPage(),
+        ),
+        AppTab(
           slug: 'rapor',
           label: 'Rapor',
           icon: Icons.description_outlined,
           selectedIcon: Icons.description,
-          sprint: 3,
+          builder: () => const SiswaRaporPage(),
         ),
         _profil(),
       ];
