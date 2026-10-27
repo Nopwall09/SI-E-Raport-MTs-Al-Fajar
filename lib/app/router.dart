@@ -17,7 +17,7 @@ import 'role_tabs.dart';
 /// - Sedang memeriksa sesi atau gagal memeriksa: tahan di /splash
 /// - Belum masuk: paksa ke /login
 /// - Sudah masuk: arahkan ke beranda role-nya, dan tolak area role lain
-/// - Tab wali kelas hanya untuk guru yang menjadi wali kelas
+/// - Halaman terpisah wali kelas dialihkan ke beranda gabungan
 @visibleForTesting
 String? redirectFor(AsyncValue<AppUser?> auth, String location) {
   if (auth.isLoading || auth.hasError) {
@@ -31,8 +31,7 @@ String? redirectFor(AsyncValue<AppUser?> auth, String location) {
 
   if (location == '/splash' || location == '/login') return user.homePath;
   if (!location.startsWith(user.role.basePath)) return user.homePath;
-  if (location.startsWith('${user.role.basePath}/wali-kelas') &&
-      !user.isWaliKelas) {
+  if (location.startsWith('${user.role.basePath}/wali-kelas')) {
     return user.homePath;
   }
   return null;
