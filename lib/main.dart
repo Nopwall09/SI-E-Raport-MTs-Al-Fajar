@@ -1,4 +1,8 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'dart:async';
+
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -22,4 +26,27 @@ Future<void> main() async {
   }
 
   runApp(const ProviderScope(child: EraporApp()));
+  unawaited(_spikeFcm());
+}
+
+/// SPIKE (sementara, jangan di-merge): tidak boleh menahan runApp.
+Future<void> _spikeFcm() async {
+  try {
+    await Firebase.initializeApp();
+    debugPrint('FCM_INIT=ok');
+    final fcm = FirebaseMessaging.instance;
+    final izin = await fcm.requestPermission();
+    debugPrint('FCM_IZIN=${izin.authorizationStatus}');
+    debugPrint('FCM_TOKEN=${await fcm.getToken()}');
+    FirebaseMessaging.onMessage.listen(
+      (m) => debugPrint(
+        'FCM_FOREGROUND=${m.notification?.title}|${m.notification?.body}',
+      ),
+    );
+    FirebaseMessaging.onMessageOpenedApp.listen(
+      (m) => debugPrint('FCM_DIKETUK=${m.notification?.title}|${m.data}'),
+    );
+  } catch (e, st) {
+    debugPrint('FCM_ERROR=$e $st');
+  }
 }

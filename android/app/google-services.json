@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "687490436692",
+    "project_id": "si-e-mts-al-fajar",
+    "storage_bucket": "si-e-mts-al-fajar.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:687490436692:android:3446d275de1100c40027c1",
+        "android_client_info": {
+          "package_name": "com.example.si_e_rapor_mts_al_fajar"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA53ZT4Gx7GxUNXXTLoePX7Do1-UV8EI_g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
