@@ -90,17 +90,22 @@ class WaliMuridRepository {
           .eq('user_id', currentUserId)
           .maybeSingle();
 
-      if (wali == null) {
-        return _dataContoh();
+      // 2. Cari anak yang diasuh. Siswa yang login melihat dirinya sendiri
+      // (halaman ini dipakai bersama), dan akun lain seperti guru tidak punya
+      // anak sama sekali.
+      final List<Map<String, dynamic>> siswaRows;
+      if (wali != null) {
+        siswaRows = await _db
+            .from('siswa')
+            .select('id, nis, nisn, nama, jk')
+            .eq('wali_murid_id', wali['id'] as int);
+      } else {
+        siswaRows = await _db
+            .from('siswa')
+            .select('id, nis, nisn, nama, jk')
+            .eq('user_id', currentUserId);
+        if (siswaRows.isEmpty) return const [];
       }
-
-      final waliId = wali['id'] as int;
-
-      // 2. Cari semua anak yang diasuh
-      final siswaRows = await _db
-          .from('siswa')
-          .select('id, nis, nisn, nama, jk')
-          .eq('wali_murid_id', waliId);
 
       if (siswaRows.isEmpty) {
         return _dataContoh();

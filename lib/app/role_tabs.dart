@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../core/widgets/placeholder_page.dart';
 import '../features/auth/domain/user.dart';
 import '../features/auth/presentation/profile_page.dart';
-import '../features/dashboard/presentation/dashboard_page.dart';
 import '../features/dashboard/presentation/guru_beranda_page.dart';
 import '../features/nilai/presentation/nilai_page.dart';
 import '../features/wali_murid/presentation/wali_murid_page.dart';
@@ -34,36 +32,12 @@ class AppTab {
   final bool onlyWaliKelas;
 }
 
-AppTab _beranda() => AppTab(
-  slug: 'beranda',
-  label: 'Beranda',
-  icon: Icons.home_outlined,
-  selectedIcon: Icons.home,
-  builder: () => const DashboardPage(),
-);
-
 AppTab _profil() => AppTab(
   slug: 'profil',
   label: 'Profil',
   icon: Icons.person_outline,
   selectedIcon: Icons.person,
   builder: () => const ProfilePage(),
-);
-
-AppTab _segera({
-  required String slug,
-  required String label,
-  required IconData icon,
-  required IconData selectedIcon,
-  required int sprint,
-  bool onlyWaliKelas = false,
-}) => AppTab(
-  slug: slug,
-  label: label,
-  icon: icon,
-  selectedIcon: selectedIcon,
-  onlyWaliKelas: onlyWaliKelas,
-  builder: () => PlaceholderPage(title: label, sprint: sprint),
 );
 
 AppTab _admin(
@@ -141,14 +115,14 @@ List<AppTab> tabsFor(UserRole role) {
         _profil(),
       ];
     case UserRole.siswa:
+      // Siswa memakai halaman yang sama dengan wali murid (data dirinya sendiri).
       return [
-        _beranda(),
-        _segera(
-          slug: 'rapor',
-          label: 'Rapor',
-          icon: Icons.description_outlined,
-          selectedIcon: Icons.description,
-          sprint: 3,
+        AppTab(
+          slug: 'beranda',
+          label: 'Beranda',
+          icon: Icons.home_outlined,
+          selectedIcon: Icons.home,
+          builder: () => const WaliMuridPage(),
         ),
         _profil(),
       ];

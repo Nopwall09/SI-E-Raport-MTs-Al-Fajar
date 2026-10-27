@@ -6,6 +6,7 @@ import '../../../widgets/motion.dart';
 import '../../../widgets/trend_chart_widget.dart';
 import '../../admin/presentation/admin_providers.dart';
 import '../../admin/presentation/admin_widgets.dart';
+import '../../auth/domain/user.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../data/wali_murid_repository.dart';
 import 'wali_murid_providers.dart';
@@ -31,7 +32,9 @@ class _WaliMuridPageState extends ConsumerState<WaliMuridPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Perkembangan Anak'),
+        title: Text(
+          user?.role == UserRole.siswa ? 'Perkembangan Saya' : 'Perkembangan Anak',
+        ),
         actions: [
           IconButton(
             tooltip: 'Segarkan data',

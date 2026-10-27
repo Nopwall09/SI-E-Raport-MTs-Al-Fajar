@@ -33,9 +33,7 @@ void main() {
     expect(find.widgetWithText(FilledButton, 'Masuk'), findsOneWidget);
   });
 
-  testWidgets('guru biasa hanya melihat dashboard guru mapel', (
-    tester,
-  ) async {
+  testWidgets('guru biasa hanya melihat dashboard guru mapel', (tester) async {
     await _login(tester, 'guru');
 
     expect(find.text('Halo, Guru Contoh'), findsOneWidget);
@@ -91,4 +89,15 @@ void main() {
     expect(find.text('Muhammad Farhan Al-Ghifari'), findsOneWidget);
     expect(find.text('Grafik Perkembangan Berkala'), findsOneWidget);
   });
+
+  testWidgets(
+    'siswa memakai halaman perkembangan yang sama dengan wali murid',
+    (tester) async {
+      await _login(tester, 'siswa');
+
+      expect(find.text('Perkembangan Saya'), findsWidgets);
+      expect(find.text('Muhammad Farhan Al-Ghifari'), findsOneWidget);
+      expect(find.text('Rapor'), findsNothing);
+    },
+  );
 }
