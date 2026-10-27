@@ -50,7 +50,8 @@ async function tokenAkses(sa: Akun): Promise<string> {
 }
 
 type Pesan = { token: string; judul: string; isi: string; data: Record<string, string> };
-type Hasil = "terkirim" | "gagal" | "token_mati";
+// alasan: kode status dari FCM (mis. UNREGISTERED), tanpa token atau isi pesan.
+type Hasil = { h: "terkirim" | "gagal" | "token_mati"; alasan?: string };
 
 async function kirim(akses: string, proyek: string, p: Pesan): Promise<Hasil> {
   const res = await fetch(`https://fcm.googleapis.com/v1/projects/${proyek}/messages:send`, {
@@ -65,9 +66,9 @@ async function kirim(akses: string, proyek: string, p: Pesan): Promise<Hasil> {
       },
     }),
   });
-  if (res.ok) return "terkirim";
-  const status = (await res.json().catch(() => ({})))?.error?.status;
-  return status === "UNREGISTERED" || status === "NOT_FOUND" ? "token_mati" : "gagal";
+  if (res.ok) return { h: "terkirim" };
+  const status = (await res.json().catch(() => ({})))?.error?.status ?? `HTTP_${res.status}`;
+  return { h: status === "UNREGISTERED" || status === "NOT_FOUND" ? "token_mati" : "gagal", alasan: status };
 }
 
 Deno.serve(async (req) => {
@@ -146,19 +147,23 @@ Deno.serve(async (req) => {
 
   let terkirim = 0, gagal = 0;
   const mati: string[] = [];
+  const alasan: Record<string, number> = {};
   for (let i = 0; i < pesan.length; i += 10) {
     const hasil = await Promise.all(
-      pesan.slice(i, i + 10).map((p) => kirim(akses, akun.project_id, p).catch((): Hasil => "gagal")),
+      pesan.slice(i, i + 10).map((p) =>
+        kirim(akses, akun.project_id, p).catch((): Hasil => ({ h: "gagal", alasan: "TIDAK_TERJANGKAU" }))
+      ),
     );
-    hasil.forEach((h, j) => {
+    hasil.forEach(({ h, alasan: a }, j) => {
       if (h === "terkirim") terkirim++;
       else {
         gagal++;
+        if (a) alasan[a] = (alasan[a] ?? 0) + 1;
         if (h === "token_mati") mati.push(pesan[i + j].token);
       }
     });
   }
   if (mati.length) await admin.from("device_token").delete().in("token", mati);
 
-  return json({ terkirim, gagal, perangkat: pesan.length });
+  return json({ terkirim, gagal, perangkat: pesan.length, ...(gagal ? { alasan } : {}) });
 });
