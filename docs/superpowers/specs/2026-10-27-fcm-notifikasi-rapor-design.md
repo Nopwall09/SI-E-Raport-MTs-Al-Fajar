@@ -14,16 +14,16 @@ layar Rapor. Keduanya belum ada di aplikasi, jadi FCM tidak bisa diuji tanpa mer
 
 Urutan kerja:
 
-1. **A. Finalisasi rapor** (UC-18): **dikerjakan teman pemilik, bukan bagian dokumen ini.**
+1. **A. Finalisasi rapor** (UC-18): **dikerjakan Dimas, bukan bagian dokumen ini.**
    Dokumen ini hanya mencatat apa yang FCM butuhkan darinya (lihat "Kontrak dengan
    finalisasi" di bawah).
 2. **B. Layar Rapor** untuk siswa dan wali murid (tujuan ketukan notifikasi, tanpa PDF).
-   Belum ditentukan siapa yang mengerjakan; tanyakan ke pemilik sebelum mulai.
+   Dikerjakan Dimas bersama finalisasi.
 3. **C. Notifikasi FCM** (UC-04, UC-20): bagian milik dokumen ini.
 
 ## Sasaran
 
-- (Bagian teman pemilik, bukan dokumen ini.) Wali kelas bisa memfinalisasi rapor satu
+- (Bagian Dimas, bukan dokumen ini.) Wali kelas bisa memfinalisasi rapor satu
   kelas untuk semester aktif. Hasilnya rapor terkunci: nilai, presensi, dan catatan tidak
   bisa berubah lagi.
 - Siswa dan wali murid melihat rapor final anaknya di layar Rapor.
@@ -61,9 +61,9 @@ Urutan kerja:
 - Berkas dari Firebase: proyek `si-e-mts-al-fajar`, nomor 687490436692, aplikasi
   Android `com.example.si_e_rapor_mts_al_fajar` (sama dengan `applicationId`).
 
-## Kontrak dengan finalisasi (dikerjakan teman pemilik)
+## Kontrak dengan finalisasi (dikerjakan Dimas)
 
-FCM hanya bergantung pada empat hal ini. Bila teman pemilik menyusunnya berbeda, cukup
+FCM hanya bergantung pada empat hal ini. Bila Dimas menyusunnya berbeda, cukup
 sesuaikan di sini, bukan di bagian C:
 
 1. Setelah finalisasi sukses, baris `rapor` kelas itu pada semester itu berstatus
@@ -77,7 +77,7 @@ sesuaikan di sini, bukan di bagian C:
    terkunci saat rapor final. Itu tanggung jawab bagian finalisasi, tetapi notifikasi
    "rapor final" menjadi menyesatkan bila nilainya masih bisa berubah.
 
-Hal yang perlu disepakati dengan teman pemilik sebelum bagian C dimulai: nama fungsi atau
+Hal yang perlu disepakati dengan Dimas sebelum bagian C dimulai: nama fungsi atau
 RPC finalisasi, di berkas layar mana tombolnya, dan siapa yang menambahkan satu baris
 pemanggilan ke fungsi pengirim notifikasi.
 

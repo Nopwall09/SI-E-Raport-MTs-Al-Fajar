@@ -81,14 +81,14 @@ Kalau menambah field wajib di model seperti `SiswaProgres`, perbarui override it
 
 | Pekerjaan | Pemilik | Catatan |
 |---|---|---|
-| Finalisasi rapor | **teman Syakir** | Lihat kontrak di bawah. |
-| Layar Rapor siswa dan wali murid | **belum ada pemilik** | Tujuan ketukan notifikasi. Tanpa PDF dulu. |
+| Finalisasi rapor | **Dimas** | Lihat kontrak di bawah. |
+| Layar Rapor siswa dan wali murid | **Dimas** | Tujuan ketukan notifikasi. Tanpa PDF dulu. Rute yang akan dipakai notifikasi: `/siswa/rapor` dan `/wali-murid/rapor?siswa=ID`. |
 | Notifikasi FCM | Syakir | Rancangan di `docs/superpowers/specs/2026-10-27-fcm-notifikasi-rapor-design.md`. Uji coba ada di branch lokal `spike-fcm` (belum di-push). |
 | PDF rapor dan absensi, buka kunci rapor | belum ada pemilik | Buka kunci menunggu keputusan sekolah. |
 
-### Untuk yang mengerjakan finalisasi
+### Untuk Dimas (finalisasi dan layar Rapor)
 
-FCM bergantung pada empat hal ini dari kalian:
+FCM bergantung pada empat hal ini dari finalisasi:
 
 1. Setelah finalisasi, baris `rapor` kelas itu pada semester itu berstatus `final`.
 2. Finalisasi dipanggil dari aplikasi oleh wali kelas dan hasilnya sukses atau galat.
@@ -101,7 +101,8 @@ FCM bergantung pada empat hal ini dari kalian:
 masih bisa mengubah nilai lewat RLS. Itu perlu ditutup di bagian finalisasi, mis. trigger
 yang menolak ubah `detnilai` kalau rapor siswa itu pada semester itu sudah final.
 
-Kabari Syakir: nama RPC atau fungsinya, dan berkas layar tempat tombolnya.
+Kabari Syakir: nama RPC atau fungsinya, berkas layar tempat tombolnya, dan apakah layar
+Rapor bisa dibuka langsung untuk satu anak lewat rute di atas.
 Syarat dari dokumen rancangan: finalisasi hanya bila nilai semua mapel semua siswa terisi
 (belum dikonfirmasi sekolah).
 
