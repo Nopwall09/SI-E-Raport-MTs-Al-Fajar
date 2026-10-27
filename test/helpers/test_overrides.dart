@@ -4,6 +4,8 @@ import 'package:si_e_rapor_mts_al_fajar/features/admin/presentation/admin_provid
 import 'package:si_e_rapor_mts_al_fajar/features/auth/data/fake_auth_repository.dart';
 import 'package:si_e_rapor_mts_al_fajar/features/auth/presentation/auth_controller.dart';
 import 'package:si_e_rapor_mts_al_fajar/features/nilai/data/nilai_repository.dart';
+import 'package:si_e_rapor_mts_al_fajar/features/notifikasi/notifikasi_providers.dart';
+import 'package:si_e_rapor_mts_al_fajar/features/notifikasi/notifikasi_service.dart';
 import 'package:si_e_rapor_mts_al_fajar/features/nilai/presentation/nilai_providers.dart';
 import 'package:si_e_rapor_mts_al_fajar/features/wali_kelas/data/wali_kelas_repository.dart';
 import 'package:si_e_rapor_mts_al_fajar/features/wali_kelas/presentation/wali_kelas_providers.dart';
@@ -18,6 +20,7 @@ List<Override> testOverrides({String? signedInAs}) {
     authRepositoryProvider.overrideWithValue(
       FakeAuthRepository(latency: Duration.zero, signedInAs: signedInAs),
     ),
+    notifikasiServiceProvider.overrideWithValue(const NotifikasiKosong()),
     tahunAjaranAktifProvider.overrideWith(
       (ref) async => const TahunAjaranAktif(1, '2026/2027', 'ganjil'),
     ),

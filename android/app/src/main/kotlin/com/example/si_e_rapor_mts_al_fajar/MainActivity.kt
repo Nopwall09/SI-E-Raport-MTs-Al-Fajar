@@ -10,6 +10,7 @@ import android.content.Intent
 import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
 import androidx.core.content.FileProvider
@@ -23,6 +24,20 @@ class MainActivity : FlutterActivity() {
     private val CHANNEL = "com.example.si_e_rapor_mts_al_fajar/downloader"
     private val NOTIF_CHANNEL_ID = "rapor_download_channel"
     private val NOTIF_ID = 2026
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        // Channel FCM: tanpa ini FCM memakai channel bawaan berprioritas default,
+        // yang tidak memunculkan pop-up melayang.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val fcmChannel = NotificationChannel(
+                "rapor_penting",
+                "Rapor dan pengumuman penting",
+                NotificationManager.IMPORTANCE_HIGH,
+            )
+            getSystemService(NotificationManager::class.java).createNotificationChannel(fcmChannel)
+        }
+    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)

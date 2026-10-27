@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/config/env.dart';
 import '../../../core/providers.dart';
+import '../../notifikasi/notifikasi_providers.dart';
 import '../data/fake_auth_repository.dart';
 import '../data/supabase_auth_repository.dart';
 import '../domain/auth_repository.dart';
@@ -49,6 +50,11 @@ class AuthController extends AsyncNotifier<AppUser?> {
   }
 
   Future<void> logout() async {
+    // Hapus token perangkat selagi sesi masih berlaku; gagal tidak boleh
+    // menghalangi keluar.
+    try {
+      await ref.read(notifikasiServiceProvider).berhenti();
+    } catch (_) {}
     await ref.read(authRepositoryProvider).logout();
     state = const AsyncData(null);
   }
