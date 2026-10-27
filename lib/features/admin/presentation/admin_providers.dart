@@ -3,9 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/config/env.dart';
 import '../../../core/providers.dart';
 import '../../../models/dashboard_model.dart';
+import '../../../models/data_rapor_model.dart';
 import '../../../models/guru_model.dart';
 import '../../../models/kelas_model.dart';
+import '../../../models/mapel_model.dart';
 import '../../../models/siswa_model.dart';
+import '../../../models/tahun_ajaran_model.dart';
 import '../../../models/user_model.dart';
 import '../data/admin_repository.dart';
 
@@ -46,6 +49,37 @@ final adminKelasProvider = FutureProvider<List<KelasModel>>(
 final adminPenggunaProvider = FutureProvider<List<UserModel>>(
   (ref) => ref.watch(adminRepositoryProvider).daftarPengguna(),
 );
+
+/// Foto profil semua siswa (id -> URL bertanda). Gagal tidak mengganggu
+/// daftar: avatar jatuh ke inisial.
+final adminFotoSiswaProvider = FutureProvider<Map<int, String>>((ref) async {
+  final siswa = await ref.watch(adminSiswaProvider.future);
+  return ref.watch(adminRepositoryProvider).urlFotoSiswaBanyak([
+    for (final s in siswa) int.parse(s.id),
+  ]);
+});
+
+final adminMapelProvider = FutureProvider<List<MapelModel>>(
+  (ref) => ref.watch(adminRepositoryProvider).daftarMapel(),
+);
+
+final adminTahunAjaranProvider = FutureProvider<List<TahunAjaranModel>>(
+  (ref) => ref.watch(adminRepositoryProvider).daftarTahunAjaran(),
+);
+
+final adminRaporProvider =
+    FutureProvider.family<
+      List<DataRaporModel>,
+      ({int kelasId, String kelasNama, String semester})
+    >(
+      (ref, k) => ref
+          .watch(adminRepositoryProvider)
+          .daftarRapor(
+            kelasId: k.kelasId,
+            kelasNama: k.kelasNama,
+            semester: k.semester,
+          ),
+    );
 
 final opsiKelasProvider = FutureProvider<List<Opsi>>(
   (ref) => ref.watch(adminRepositoryProvider).opsiKelas(),

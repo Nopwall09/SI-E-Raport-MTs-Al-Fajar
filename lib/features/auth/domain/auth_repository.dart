@@ -7,6 +7,10 @@ abstract class AuthRepository {
   /// Mengembalikan null bila belum ada sesi atau sesi sudah tidak berlaku.
   Future<AppUser?> restoreSession();
 
+  /// Mengganti password pengguna yang login, menghapus kewajiban ganti
+  /// password, lalu mengembalikan profil terbaru. Melempar `AppException`.
+  Future<AppUser> gantiPassword(String passwordBaru);
+
   /// Selalu mengakhiri sesi lokal, walau permintaan ke server gagal.
   Future<void> logout();
 

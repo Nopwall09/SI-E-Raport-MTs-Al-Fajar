@@ -22,6 +22,7 @@ enum AppErrorType {
 ///   P0001  `raise exception` dari trigger/RPC -> conflict (mis. rapor final)
 ///   23505  nilai unik ganda                   -> conflict
 ///   23514  melanggar CHECK (mis. nilai 0-100) -> validation
+///   23503  masih dipakai data lain (FK)       -> conflict
 ///   PGRST301  JWT kedaluwarsa                 -> unauthorized
 class AppException implements Exception {
   const AppException(this.type, this.message);
@@ -107,6 +108,11 @@ class AppException implements Exception {
         return AppException(AppErrorType.conflict, error.message);
       case '23505':
         return const AppException(AppErrorType.conflict, 'Data ini sudah ada.');
+      case '23503':
+        return const AppException(
+          AppErrorType.conflict,
+          'Data ini masih dipakai di data lain, jadi belum bisa dihapus.',
+        );
       case '23514':
         return const AppException(
           AppErrorType.validation,

@@ -47,6 +47,13 @@ void main() {
       expect(error.type, AppErrorType.unauthorized);
     });
 
+    test('23503 (masih dipakai data lain) menjadi conflict', () {
+      final error = AppException.from(
+        PostgrestException(message: 'fk', code: '23503'),
+      );
+      expect(error.type, AppErrorType.conflict);
+    });
+
     test('kode tak dikenal menjadi server', () {
       final error = AppException.from(
         PostgrestException(message: 'boom', code: 'XX000'),

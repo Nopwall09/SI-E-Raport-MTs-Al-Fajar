@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../app/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../widgets/motion.dart';
 import '../../features/admin/presentation/admin_providers.dart';
 import '../../features/admin/presentation/admin_widgets.dart';
@@ -65,6 +66,13 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Impor dari Excel',
+            icon: const Icon(Icons.upload_file),
+            onPressed: () => context.push('/admin/impor-siswa'),
+          ),
+        ],
       ),
       body:
           statusAsync(lista, () => ref.invalidate(adminSiswaProvider)) ??
@@ -240,17 +248,11 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
               children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: brandColor.withValues(alpha: 0.1),
-                  child: Text(
-                    siswa.nama.isNotEmpty ? siswa.nama[0] : 'S',
-                    style: TextStyle(
-                      color: brandColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
+                AvatarSiswa(
+                  nama: siswa.nama,
+                  url: ref
+                      .watch(adminFotoSiswaProvider)
+                      .valueOrNull?[int.parse(siswa.id)],
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -293,193 +295,169 @@ class _AdminDataSiswaScreenState extends ConsumerState<AdminDataSiswaScreen> {
   ) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.white,
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Detail Siswa',
-                  style: TextStyle(
+      builder: (ctx) => SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Detail Siswa',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: kText,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: AvatarSiswa(
+                  nama: siswa.nama,
+                  radius: 26,
+                  url: ref
+                      .read(adminFotoSiswaProvider)
+                      .valueOrNull?[int.parse(siswa.id)],
+                ),
+                title: Text(
+                  siswa.nama,
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: kText,
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: CircleAvatar(
-                radius: 26,
-                backgroundColor: brandColor.withValues(alpha: 0.12),
-                child: Text(
-                  siswa.nama[0],
-                  style: TextStyle(
-                    color: brandColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 22,
-                  ),
-                ),
+                subtitle: Text('NIS ${siswa.nis}'),
               ),
-              title: Text(
-                siswa.nama,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+              const Divider(),
+              _buildDetailRow('NISN', siswa.nisn),
+              _buildDetailRow('Kelas', siswa.kelas),
+              _buildDetailRow(
+                'Jenis Kelamin',
+                siswa.jenisKelamin == 'L' ? 'Laki-laki' : 'Perempuan',
               ),
-              subtitle: Text('NIS ${siswa.nis}'),
-            ),
-            const Divider(),
-            _buildDetailRow('NISN', siswa.nisn),
-            _buildDetailRow('Kelas', siswa.kelas),
-            _buildDetailRow(
-              'Jenis Kelamin',
-              siswa.jenisKelamin == 'L' ? 'Laki-laki' : 'Perempuan',
-            ),
-            _buildDetailRow(
-              'Nama Orang Tua / Wali',
-              siswa.namaWali.isNotEmpty ? siswa.namaWali : 'Belum terhubung',
-            ),
-            const SizedBox(height: 12),
-            // [QR-Code (2%)] & [Kamera/Galeri (2%)]: Tombol Kartu Pelajar QR & Foto Profil
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
+              _buildDetailRow(
+                'Nama Orang Tua / Wali',
+                siswa.namaWali.isNotEmpty ? siswa.namaWali : 'Belum terhubung',
+              ),
+              const SizedBox(height: 12),
+              // [QR-Code (2%)] & [Kamera/Galeri (2%)]: Tombol Kartu Pelajar QR & Foto Profil
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        _showQrKartuSiswa(context, siswa);
+                      },
+                      icon: const Icon(Icons.qr_code, size: 16),
+                      label: const Text(
+                        'Kartu Pelajar QR',
+                        style: TextStyle(fontSize: 12),
+                      ),
                     ),
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      _showQrKartuSiswa(context, siswa);
-                    },
-                    icon: const Icon(Icons.qr_code, size: 16),
-                    label: const Text('Kartu Pelajar QR',
-                        style: TextStyle(fontSize: 12)),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        _uploadFotoSiswa(context, siswa);
+                      },
+                      icon: const Icon(Icons.camera_alt_outlined, size: 16),
+                      label: const Text(
+                        'Foto (Kamera/Galeri)',
+                        style: TextStyle(fontSize: 12),
+                      ),
                     ),
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      _uploadFotoSiswa(context, siswa);
-                    },
-                    icon: const Icon(Icons.camera_alt_outlined, size: 16),
-                    label: const Text('Foto (Kamera/Galeri)',
-                        style: TextStyle(fontSize: 12)),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            AksiUbahHapus(
-              onUbah: () {
-                Navigator.pop(ctx);
-                _showSiswaFormSheet(context, awal: siswa);
-              },
-              onHapus: () async {
-                final yakin = await konfirmasiHapus(
-                  ctx,
-                  judul: 'Hapus ${siswa.nama}?',
-                  isi:
-                      'Data siswa beserta nilai dan rapornya akan terhapus permanen.',
-                );
-                if (!yakin || !context.mounted) return;
-                final ok = await simpan(
-                  context,
-                  () => ref
-                      .read(adminRepositoryProvider)
-                      .hapusSiswa(int.parse(siswa.id)),
-                  'Siswa ${siswa.nama} dihapus.',
-                );
-                if (!ok) return;
-                _segarkan();
-                if (ctx.mounted) Navigator.pop(ctx);
-              },
-            ),
-          ],
+                ],
+              ),
+              const SizedBox(height: 14),
+              AksiUbahHapus(
+                onUbah: () {
+                  Navigator.pop(ctx);
+                  _showSiswaFormSheet(context, awal: siswa);
+                },
+                onHapus: () async {
+                  final yakin = await konfirmasiHapus(
+                    ctx,
+                    judul: 'Hapus ${siswa.nama}?',
+                    isi:
+                        'Data siswa beserta nilai dan rapornya akan terhapus permanen.',
+                  );
+                  if (!yakin || !context.mounted) return;
+                  final ok = await simpan(
+                    context,
+                    () => ref
+                        .read(adminRepositoryProvider)
+                        .hapusSiswa(int.parse(siswa.id)),
+                    'Siswa ${siswa.nama} dihapus.',
+                  );
+                  if (!ok) return;
+                  _segarkan();
+                  if (ctx.mounted) Navigator.pop(ctx);
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   void _showQrKartuSiswa(BuildContext context, SiswaModel siswa) {
-    final payload = 'ALFAJAR-SISWA-${siswa.nisn}-${siswa.kelas}-VALID';
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.badge_outlined, color: kBrand),
-            SizedBox(width: 8),
-            Text('Kartu Pelajar Digital'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              siswa.nama,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            Text('NIS: ${siswa.nis} · NISN: ${siswa.nisn} · Kelas ${siswa.kelas}',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-            const SizedBox(height: 16),
-            QrCodeWidget(data: payload, size: 180, color: const Color(0xFF0D5C3A)),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Text(
-                'Scan QR-Code untuk verifikasi identitas siswa resmi MTs Al Fajar Kandat.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 11),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: kBrand),
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Tutup'),
-          ),
-        ],
-      ),
+    tampilkanDialogQr(
+      context,
+      judul: 'Kartu Pelajar Digital',
+      nama: siswa.nama,
+      info: [
+        ('NIS', siswa.nis),
+        ('NISN', siswa.nisnAsli ?? '-'),
+        ('Kelas', siswa.kelas),
+      ],
+      isiQr:
+          'KARTU PELAJAR MTs AL FAJAR KANDAT\n'
+          'Nama: ${siswa.nama}\n'
+          'NIS: ${siswa.nis}\n'
+          'NISN: ${siswa.nisnAsli ?? '-'}\n'
+          'Kelas: ${siswa.kelas}',
     );
   }
 
   void _uploadFotoSiswa(BuildContext context, SiswaModel siswa) {
     MediaPickerDialog.show(
       context,
-      title: 'Pilih Sumber Foto Profil Siswa',
+      title: 'Foto profil siswa',
       studentName: siswa.nama,
-      onMediaSelected: (source, fileName) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                '[$source] Berhasil memilih berkas $fileName. Mengunggah ke Supabase Storage bucket "foto-siswa"...'),
-          ),
+      onPicked: (file) async {
+        final bytes = await file.readAsBytes();
+        if (!context.mounted) return;
+        final ok = await simpan(
+          context,
+          () => ref
+              .read(adminRepositoryProvider)
+              .unggahFotoSiswa(int.parse(siswa.id), bytes, mimeGambar(file)),
+          'Foto ${siswa.nama} tersimpan.',
         );
+        if (ok) ref.invalidate(adminFotoSiswaProvider);
       },
     );
   }

@@ -1,11 +1,18 @@
+import 'dart:math' as math;
+import 'dart:typed_data';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/error/app_exception.dart';
 import '../../../models/dashboard_model.dart';
+import '../../../models/data_rapor_model.dart';
 import '../../../models/guru_model.dart';
 import '../../../models/kelas_model.dart';
+import '../../../models/mapel_model.dart';
 import '../../../models/siswa_model.dart';
+import '../../../models/tahun_ajaran_model.dart';
 import '../../../models/user_model.dart';
+import 'impor_siswa.dart';
 
 class TahunAjaranAktif {
   const TahunAjaranAktif(this.id, this.tahun, this.semester);
@@ -343,6 +350,258 @@ class AdminRepository {
   Future<void> setPenggunaAktif(String userId, bool aktif) =>
       _db.from('users').update({'is_active': aktif}).eq('id', userId);
 
+  /// Kesiapan rapor: jumlah mapel yang sudah ada nilainya per siswa di satu
+  /// kelas pada semester [semester] ('ganjil' atau 'genap').
+  Future<List<DataRaporModel>> daftarRapor({
+    required int kelasId,
+    required String kelasNama,
+    required String semester,
+  }) async {
+    final ta = await tahunAjaranAktif();
+    final anggota = await _db
+        .from('kelas_siswa')
+        .select('id,siswa(id,nama,nis,nisn)')
+        .eq('kelas_id', kelasId)
+        .eq('tahun_ajaran_id', ta.id);
+    final total =
+        (await _db
+                .from('penugasan_mengajar')
+                .select('id')
+                .eq('kelas_id', kelasId)
+                .count(CountOption.exact))
+            .count;
+    final ksIds = [for (final a in anggota) a['id'] as int];
+    final nilai = ksIds.isEmpty
+        ? const <Map<String, dynamic>>[]
+        : await _db
+              .from('detnilai')
+              .select('kelas_siswa_id')
+              .inFilter('kelas_siswa_id', ksIds)
+              .eq('semester', semester);
+    final terisi = <int, int>{};
+    for (final n in nilai) {
+      terisi.update(
+        n['kelas_siswa_id'] as int,
+        (v) => v + 1,
+        ifAbsent: () => 1,
+      );
+    }
+    final hasil = [
+      for (final a in anggota)
+        DataRaporModel(
+          id: '${a['siswa']['id']}',
+          namaSiswa: a['siswa']['nama'] as String,
+          nisn: (a['siswa']['nisn'] ?? a['siswa']['nis']) as String,
+          kelas: kelasNama,
+          semester: semester,
+          mapelSelesai: math.min(terisi[a['id'] as int] ?? 0, total),
+          totalMapel: total,
+        ),
+    ];
+    hasil.sort((a, b) => a.namaSiswa.compareTo(b.namaSiswa));
+    return hasil;
+  }
+
+  // ---- Mata pelajaran ----
+
+  Future<List<MapelModel>> daftarMapel() async {
+    final rows = await _db
+        .from('mapel')
+        .select(
+          'id,kode,nama,kategori,jam_mulai,penugasan_mengajar(guru(nama))',
+        )
+        .order('nama');
+    return [
+      for (final r in rows)
+        MapelModel(
+          id: '${r['id']}',
+          kode: r['kode'] as String,
+          nama: r['nama'] as String,
+          guruPengampu: _guruMapel(r['penugasan_mengajar']),
+          kategori: r['kategori'] as String,
+          jamMulai: (r['jam_mulai'] as String?)?.substring(0, 5),
+        ),
+    ];
+  }
+
+  /// Mengembalikan id baris baru. [jamMulai] berformat 'HH:mm' atau null.
+  Future<int> tambahMapel({
+    required String kode,
+    required String nama,
+    required String kategori,
+    String? jamMulai,
+  }) async {
+    final row = await _db
+        .from('mapel')
+        .insert({
+          'kode': kode,
+          'nama': nama,
+          'kategori': kategori,
+          'jam_mulai': jamMulai,
+        })
+        .select('id')
+        .single();
+    return row['id'] as int;
+  }
+
+  Future<void> ubahMapel({
+    required int id,
+    required String kode,
+    required String nama,
+    required String kategori,
+    String? jamMulai,
+  }) => _db
+      .from('mapel')
+      .update({
+        'kode': kode,
+        'nama': nama,
+        'kategori': kategori,
+        'jam_mulai': jamMulai,
+      })
+      .eq('id', id);
+
+  /// Menetapkan guru pengampu mapel di satu kelas. Satu kelas hanya punya satu
+  /// guru per mapel, jadi guru lama di kelas itu digantikan.
+  Future<void> tugaskanGuru({
+    required int mapelId,
+    required int guruId,
+    required int kelasId,
+  }) => _db.from('penugasan_mengajar').upsert({
+    'mapel_id': mapelId,
+    'guru_id': guruId,
+    'kelas_id': kelasId,
+  }, onConflict: 'kelas_id,mapel_id');
+
+  /// Gagal (23503) bila mapel sudah dipakai penugasan atau nilai.
+  Future<void> hapusMapel(int id) => _db.from('mapel').delete().eq('id', id);
+
+  // ---- Tahun ajaran ----
+
+  Future<List<TahunAjaranModel>> daftarTahunAjaran() async {
+    final rows = await _db
+        .from('tahun_ajaran')
+        .select('id,tahun,semester_aktif,skm,is_active')
+        .order('tahun', ascending: false);
+    return [
+      for (final r in rows)
+        TahunAjaranModel(
+          id: '${r['id']}',
+          tahun: r['tahun'] as String,
+          semester: r['semester_aktif'] as String,
+          isActive: r['is_active'] as bool,
+          skm: r['skm'] as int,
+        ),
+    ];
+  }
+
+  /// Mengembalikan id baris baru.
+  Future<int> tambahTahunAjaran({
+    required String tahun,
+    required String semester,
+    required int skm,
+  }) async {
+    final row = await _db
+        .from('tahun_ajaran')
+        .insert({'tahun': tahun, 'semester_aktif': semester, 'skm': skm})
+        .select('id')
+        .single();
+    return row['id'] as int;
+  }
+
+  Future<void> ubahTahunAjaran({
+    required int id,
+    required String tahun,
+    required String semester,
+    required int skm,
+  }) => _db
+      .from('tahun_ajaran')
+      .update({'tahun': tahun, 'semester_aktif': semester, 'skm': skm})
+      .eq('id', id);
+
+  /// Hanya satu tahun ajaran boleh aktif; fungsi database menukarnya secara
+  /// atomik (migrasi 000005).
+  Future<void> aktifkanTahunAjaran(int id) =>
+      _db.rpc('set_tahun_ajaran_aktif', params: {'p_id': id});
+
+  Future<void> hapusTahunAjaran(TahunAjaranModel t) {
+    if (t.isActive) {
+      throw const AppException(
+        AppErrorType.conflict,
+        'Tahun ajaran yang sedang aktif tidak bisa dihapus.',
+      );
+    }
+    return _db.from('tahun_ajaran').delete().eq('id', int.parse(t.id));
+  }
+
+  // ---- Supabase Storage (bucket privat, hanya admin; lihat migrasi 000004) ----
+
+  static const _bucketFoto = 'foto-siswa';
+  static const _bucketBukti = 'rapor-bukti';
+
+  Future<void> unggahFotoSiswa(int siswaId, Uint8List bytes, String mime) =>
+      _unggah(_bucketFoto, '$siswaId', bytes, mime);
+
+  /// URL bertanda (berlaku 1 jam), atau null bila siswa belum punya foto.
+  Future<String?> urlFotoSiswa(int siswaId) =>
+      _urlBertanda(_bucketFoto, '$siswaId');
+
+  /// id siswa -> URL bertanda, hanya untuk siswa yang punya foto. Satu
+  /// permintaan untuk semuanya, supaya daftar siswa tidak menembak server
+  /// sekali per baris.
+  Future<Map<int, String>> urlFotoSiswaBanyak(List<int> ids) async {
+    if (ids.isEmpty) return {};
+    try {
+      final hasil = await _db.storage.from(_bucketFoto).createSignedUrlsResult([
+        for (final i in ids) '$i',
+      ], 3600);
+      return {
+        for (final r in hasil)
+          if (r is SignedUrlSuccess) int.parse(r.path): r.signedUrl,
+      };
+    } on StorageException {
+      return {};
+    }
+  }
+
+  Future<void> unggahBuktiRapor({
+    required int siswaId,
+    required String semester,
+    required Uint8List bytes,
+    required String mime,
+  }) async {
+    final ta = await tahunAjaranAktif();
+    await _unggah(_bucketBukti, '${ta.id}/$semester/$siswaId', bytes, mime);
+  }
+
+  Future<String?> urlBuktiRapor({
+    required int siswaId,
+    required String semester,
+  }) async {
+    final ta = await tahunAjaranAktif();
+    return _urlBertanda(_bucketBukti, '${ta.id}/$semester/$siswaId');
+  }
+
+  Future<void> _unggah(
+    String bucket,
+    String path,
+    Uint8List bytes,
+    String mime,
+  ) => _db.storage
+      .from(bucket)
+      .uploadBinary(
+        path,
+        bytes,
+        fileOptions: FileOptions(contentType: mime, upsert: true),
+      );
+
+  Future<String?> _urlBertanda(String bucket, String path) async {
+    try {
+      return await _db.storage.from(bucket).createSignedUrl(path, 3600);
+    } on StorageException {
+      return null; // berkas belum ada
+    }
+  }
+
   /// Lewat Edge Function karena membuat akun butuh service role.
   Future<void> buatAkun({
     required String username,
@@ -363,6 +622,30 @@ class AdminRepository {
         'no_hp': noHp,
       },
     );
+  }
+
+  /// Password sementara baru (tampil sekali); pengguna wajib menggantinya.
+  Future<String> resetPassword(String userId) async {
+    final res = await _db.functions.invoke(
+      'admin-reset-password',
+      body: {'user_id': userId},
+    );
+    return (res.data as Map)['password'] as String;
+  }
+
+  /// Satu batch (maks. 100 baris, batas di Edge Function). NIS yang sudah ada
+  /// dilewati server, jadi mengirim ulang batch yang sama aman.
+  Future<List<HasilImpor>> imporSiswa(List<BarisSiswa> baris) async {
+    final res = await _db.functions.invoke(
+      'admin-import-siswa',
+      body: {
+        'rows': [for (final b in baris) b.toJson()],
+      },
+    );
+    return [
+      for (final h in (res.data as Map)['hasil'] as List)
+        HasilImpor.fromJson(h as Map<String, dynamic>),
+    ];
   }
 
   // Relasi to-one dikembalikan PostgREST sebagai objek, to-many sebagai list.
@@ -391,6 +674,14 @@ class AdminRepository {
       if (r['tahun_ajaran_id'] == taId) return r['nama'] as String;
     }
     return null;
+  }
+
+  static String _guruMapel(dynamic v) {
+    final nama = {
+      for (final r in (v as List).cast<Map<String, dynamic>>())
+        ?_nama(r['guru']),
+    };
+    return nama.isEmpty ? '-' : nama.join(', ');
   }
 
   static String _mapel(dynamic v) {

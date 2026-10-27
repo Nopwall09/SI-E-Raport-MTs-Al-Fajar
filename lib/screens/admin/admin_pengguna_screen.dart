@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../app/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/error/app_exception.dart';
 import '../../features/auth/presentation/auth_controller.dart';
 import '../../widgets/motion.dart';
 import '../../features/admin/presentation/admin_providers.dart';
@@ -369,10 +370,46 @@ class _AdminPenggunaScreenState extends ConsumerState<AdminPenggunaScreen> {
                 ),
                 label: Text(user.aktif ? 'Nonaktifkan akun' : 'Aktifkan akun'),
               ),
+            if (!diriSendiri) ...[
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: () => _resetPassword(ctx, user),
+                icon: const Icon(Icons.lock_reset, size: 18),
+                label: const Text('Reset password'),
+              ),
+            ],
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _resetPassword(BuildContext ctx, UserModel user) async {
+    final ya = await konfirmasiAksi(
+      ctx,
+      judul: 'Reset password?',
+      isi:
+          'Password ${user.email} diganti dengan password sementara. '
+          'Pengguna wajib menggantinya saat masuk berikutnya.',
+      aksi: 'Reset',
+    );
+    if (!ya || !ctx.mounted) return;
+    final messenger = ScaffoldMessenger.of(ctx);
+    try {
+      final password = await ref
+          .read(adminRepositoryProvider)
+          .resetPassword(user.id);
+      if (!ctx.mounted) return;
+      await tampilkanPasswordSementara(
+        ctx,
+        username: user.email,
+        password: password,
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(AppException.from(e).message)),
+      );
+    }
   }
 
   void _showAddUserSheet(BuildContext context) {

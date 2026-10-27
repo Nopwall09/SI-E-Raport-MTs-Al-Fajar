@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../app/theme.dart';
 import 'auth_controller.dart';
@@ -60,6 +61,12 @@ class ProfilePage extends ConsumerWidget {
               ),
             ),
           const SizedBox(height: 24),
+          OutlinedButton.icon(
+            onPressed: () => context.push('/ganti-password'),
+            icon: const Icon(Icons.lock_reset),
+            label: const Text('Ganti password'),
+          ),
+          const SizedBox(height: 12),
           OutlinedButton.icon(
             onPressed: () => ref.read(authControllerProvider.notifier).logout(),
             icon: const Icon(Icons.logout),

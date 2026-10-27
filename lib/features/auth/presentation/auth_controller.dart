@@ -38,6 +38,16 @@ class AuthController extends AsyncNotifier<AppUser?> {
     state = AsyncData(user);
   }
 
+  /// Melempar `AppException`. Mengembalikan profil baru agar layar bisa
+  /// langsung berpindah ke beranda.
+  Future<AppUser> gantiPassword(String passwordBaru) async {
+    final user = await ref
+        .read(authRepositoryProvider)
+        .gantiPassword(passwordBaru);
+    state = AsyncData(user);
+    return user;
+  }
+
   Future<void> logout() async {
     await ref.read(authRepositoryProvider).logout();
     state = const AsyncData(null);

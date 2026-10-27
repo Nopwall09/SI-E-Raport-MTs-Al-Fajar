@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
     return json({ error: msg }, status);
   };
 
-  const { error: uErr } = await admin.from("users").insert({ id, username, email, role });
+  const { error: uErr } = await admin.from("users").insert({ id, username, email, role, must_change_password: true });
   if (uErr) return rollback("Gagal menyimpan pengguna", 500);
 
   if (role === "guru") {

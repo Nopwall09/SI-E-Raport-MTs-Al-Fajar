@@ -9,8 +9,10 @@ Status saat ini: struktur folder, login, router, dan shell navigasi per role
 pengguna) sudah tersambung ke Supabase. Siswa dan kelas bisa ditambah, diubah,
 dan dihapus (kelas hanya bila kosong); guru bisa ditambah dan diubah; akun
 pengguna bisa dibuat, dinonaktifkan, dan diaktifkan lagi (tidak dihapus,
-karena menghapus akun Auth butuh service role). Layar guru (beranda, input
-nilai UTS, progres wali kelas) juga sudah jalan. Layar siswa, wali murid, dan
+karena menghapus akun Auth butuh service role). Admin juga bisa mereset
+password pengguna dan mengimpor siswa dari Excel; akun baru atau hasil reset
+wajib ganti password saat masuk. Layar guru (beranda, input nilai UTS, progres
+wali kelas, presensi dan catatan per siswa) juga sudah jalan. Layar siswa, wali murid, dan
 rapor masih berupa halaman sementara.
 
 `landing/` berisi halaman profil statis (HTML dan CSS tanpa build) untuk

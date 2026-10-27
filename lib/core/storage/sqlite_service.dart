@@ -1,53 +1,69 @@
-/// [Database Sqlite (Bobot 1%)]: Service SQLite lokal untuk cache offline
-/// Menyimpan tabel 'rapor_offline' & 'siswa_offline' saat tidak ada koneksi internet
+import 'package:path/path.dart' as p;
+import 'package:sqflite/sqflite.dart';
+
+/// Cache offline rapor di SQLite lokal, agar daftar terakhir yang dilihat
+/// admin tetap bisa dibuka tanpa internet.
 class SqliteOfflineService {
-  static final SqliteOfflineService _instance = SqliteOfflineService._internal();
+  static final SqliteOfflineService _instance =
+      SqliteOfflineService._internal();
   factory SqliteOfflineService() => _instance;
   SqliteOfflineService._internal();
 
-  bool _isInitialized = false;
+  static const _tabel = 'rapor_offline';
 
-  // Schema DDL SQLite lokal
-  static const String createTableRaporSql = '''
-    CREATE TABLE IF NOT EXISTS rapor_offline (
-      id TEXT PRIMARY KEY,
-      nama_siswa TEXT NOT NULL,
-      nisn TEXT NOT NULL,
-      kelas TEXT NOT NULL,
-      semester TEXT NOT NULL,
-      mapel_selesai INTEGER,
-      total_mapel INTEGER,
-      status TEXT,
-      tersimpan_pada TEXT
-    );
-  ''';
+  Database? _db;
 
-  // Simulasi tabel SQLite in-memory
-  final List<Map<String, dynamic>> _sqliteDbTable = [];
+  Future<Database> _buka() async => _db ??= await openDatabase(
+    p.join(await getDatabasesPath(), 'eraport_offline.db'),
+    version: 1,
+    onCreate: (db, _) => db.execute('''
+      CREATE TABLE $_tabel (
+        siswa_id INTEGER NOT NULL,
+        semester TEXT NOT NULL,
+        nama_siswa TEXT NOT NULL,
+        nisn TEXT NOT NULL,
+        kelas TEXT NOT NULL,
+        mapel_selesai INTEGER NOT NULL,
+        total_mapel INTEGER NOT NULL,
+        tersimpan_pada TEXT NOT NULL,
+        PRIMARY KEY (siswa_id, semester)
+      )
+    '''),
+  );
 
-  Future<void> inisialisasiDatabase() async {
-    if (_isInitialized) return;
-    _isInitialized = true;
+  /// Mengganti isi cache untuk satu kelas dan semester.
+  Future<void> simpanRapor({
+    required String kelas,
+    required String semester,
+    required List<Map<String, Object?>> baris,
+  }) async {
+    final db = await _buka();
+    final waktu = DateTime.now().toIso8601String();
+    await db.transaction((trx) async {
+      await trx.delete(
+        _tabel,
+        where: 'kelas = ? AND semester = ?',
+        whereArgs: [kelas, semester],
+      );
+      final batch = trx.batch();
+      for (final b in baris) {
+        batch.insert(_tabel, {...b, 'tersimpan_pada': waktu});
+      }
+      await batch.commit(noResult: true);
+    });
   }
 
-  /// INSERT INTO rapor_offline ...
-  Future<void> simpanRaporKeSqlite(List<Map<String, dynamic>> daftar) async {
-    await inisialisasiDatabase();
-    _sqliteDbTable.clear();
-    for (final item in daftar) {
-      _sqliteDbTable.add({
-        ...item,
-        'tersimpan_pada': DateTime.now().toIso8601String(),
-      });
-    }
-  }
+  Future<List<Map<String, Object?>>> bacaRapor({
+    required String kelas,
+    required String semester,
+  }) async => (await _buka()).query(
+    _tabel,
+    where: 'kelas = ? AND semester = ?',
+    whereArgs: [kelas, semester],
+    orderBy: 'nama_siswa',
+  );
 
-  /// SELECT * FROM rapor_offline WHERE kelas = ?
-  Future<List<Map<String, dynamic>>> bacaRaporDariSqlite(String kelas) async {
-    await inisialisasiDatabase();
-    return _sqliteDbTable.where((r) => r['kelas'] == kelas).toList();
-  }
-
-  /// Jumlah baris tersimpan di SQLite lokal
-  int get totalDataTersimpan => _sqliteDbTable.length;
+  Future<int> jumlahTersimpan() async => Sqflite.firstIntValue(
+    await (await _buka()).rawQuery('SELECT COUNT(*) FROM $_tabel'),
+  )!;
 }

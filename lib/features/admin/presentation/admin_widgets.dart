@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/theme.dart';
 import '../../../core/error/app_exception.dart';
 import '../../../core/widgets/error_view.dart';
 import '../../../widgets/motion.dart';
@@ -40,11 +42,14 @@ Future<bool> simpan(
   }
 }
 
-/// Dialog konfirmasi aksi yang tidak bisa dibatalkan. true bila dilanjutkan.
-Future<bool> konfirmasiHapus(
+/// Dialog konfirmasi. true bila dilanjutkan. [berbahaya] mewarnai tombol aksi
+/// merah (untuk hapus).
+Future<bool> konfirmasiAksi(
   BuildContext context, {
   required String judul,
   required String isi,
+  required String aksi,
+  bool berbahaya = false,
 }) async {
   final ya = await showDialog<bool>(
     context: context,
@@ -57,17 +62,80 @@ Future<bool> konfirmasiHapus(
           child: const Text('Batal'),
         ),
         TextButton(
-          style: TextButton.styleFrom(
-            foregroundColor: Theme.of(ctx).colorScheme.error,
-          ),
+          style: berbahaya
+              ? TextButton.styleFrom(
+                  foregroundColor: Theme.of(ctx).colorScheme.error,
+                )
+              : null,
           onPressed: () => Navigator.pop(ctx, true),
-          child: const Text('Hapus'),
+          child: Text(aksi),
         ),
       ],
     ),
   );
   return ya ?? false;
 }
+
+/// Menampilkan password sementara. Hanya muncul sekali: server tidak
+/// menyimpannya, jadi admin perlu menyalin atau mencatatnya sekarang.
+Future<void> tampilkanPasswordSementara(
+  BuildContext context, {
+  required String username,
+  required String password,
+}) {
+  return showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Password sementara'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Username: $username'),
+          const SizedBox(height: 8),
+          SelectableText(
+            password,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Catat sekarang, password ini tidak akan ditampilkan lagi. '
+            'Pengguna wajib menggantinya saat masuk.',
+            style: Theme.of(ctx).textTheme.bodySmall,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Clipboard.setData(ClipboardData(text: password)),
+          child: const Text('Salin'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('Selesai'),
+        ),
+      ],
+    ),
+  );
+}
+
+/// Konfirmasi aksi yang tidak bisa dibatalkan.
+Future<bool> konfirmasiHapus(
+  BuildContext context, {
+  required String judul,
+  required String isi,
+}) => konfirmasiAksi(
+  context,
+  judul: judul,
+  isi: isi,
+  aksi: 'Hapus',
+  berbahaya: true,
+);
 
 /// Dua tombol di dasar sheet detail: Hapus (outline) dan Ubah (utama).
 class AksiUbahHapus extends StatelessWidget {
@@ -109,6 +177,51 @@ class AksiUbahHapus extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Avatar siswa: inisial sebagai lapisan bawah, foto di atasnya bila ada.
+class AvatarSiswa extends StatelessWidget {
+  const AvatarSiswa({
+    super.key,
+    required this.nama,
+    this.url,
+    this.radius = 20,
+  });
+
+  final String nama;
+  final String? url;
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox.square(
+      dimension: radius * 2,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          CircleAvatar(
+            backgroundColor: kBrandSoft,
+            child: Text(
+              nama.isEmpty ? '?' : nama[0].toUpperCase(),
+              style: TextStyle(
+                color: kBrand,
+                fontWeight: FontWeight.bold,
+                fontSize: radius * 0.8,
+              ),
+            ),
+          ),
+          if (url != null)
+            ClipOval(
+              child: Image.network(
+                url!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => const SizedBox.shrink(),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

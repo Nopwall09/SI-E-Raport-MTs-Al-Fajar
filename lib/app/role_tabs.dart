@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../core/widgets/placeholder_page.dart';
 import '../features/auth/domain/user.dart';
 import '../features/auth/presentation/profile_page.dart';
-import '../features/dashboard/presentation/dashboard_page.dart';
 import '../features/dashboard/presentation/guru_beranda_page.dart';
 import '../features/nilai/presentation/nilai_page.dart';
 import '../features/siswa/presentation/siswa_beranda_page.dart';
 import '../features/siswa/presentation/siswa_rapor_page.dart';
-import '../features/wali_kelas/presentation/wali_kelas_page.dart';
 import '../features/wali_murid/presentation/wali_murid_page.dart';
 import '../screens/admin/admin_dashboard_screen.dart';
 import '../screens/admin/admin_data_guru_screen.dart';
@@ -37,36 +34,12 @@ class AppTab {
   final bool onlyWaliKelas;
 }
 
-AppTab _beranda() => AppTab(
-  slug: 'beranda',
-  label: 'Beranda',
-  icon: Icons.home_outlined,
-  selectedIcon: Icons.home,
-  builder: () => const DashboardPage(),
-);
-
 AppTab _profil() => AppTab(
   slug: 'profil',
   label: 'Profil',
   icon: Icons.person_outline,
   selectedIcon: Icons.person,
   builder: () => const ProfilePage(),
-);
-
-AppTab _segera({
-  required String slug,
-  required String label,
-  required IconData icon,
-  required IconData selectedIcon,
-  required int sprint,
-  bool onlyWaliKelas = false,
-}) => AppTab(
-  slug: slug,
-  label: label,
-  icon: icon,
-  selectedIcon: selectedIcon,
-  onlyWaliKelas: onlyWaliKelas,
-  builder: () => PlaceholderPage(title: label, sprint: sprint),
 );
 
 AppTab _admin(
@@ -140,14 +113,6 @@ List<AppTab> tabsFor(UserRole role) {
           icon: Icons.edit_note_outlined,
           selectedIcon: Icons.edit_note,
           builder: () => const NilaiPage(),
-        ),
-        AppTab(
-          slug: 'wali-kelas',
-          label: 'Wali kelas',
-          icon: Icons.groups_outlined,
-          selectedIcon: Icons.groups,
-          onlyWaliKelas: true,
-          builder: () => const WaliKelasPage(),
         ),
         _profil(),
       ];
