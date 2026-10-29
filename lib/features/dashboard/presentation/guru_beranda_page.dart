@@ -413,7 +413,7 @@ class GuruBerandaPage extends ConsumerWidget {
                                 .valueOrNull;
                             await AbsensiPdfService.cetakAtauPratinjauPdf(
                               siswa: siswaWali,
-                              kelasNama: waliKelas ?? 'Kelas',
+                              kelasNama: waliKelas,
                               semester: ta?.semester ?? 'ganjil',
                               tahunAjaran: ta?.tahun ?? '2026/2027',
                               waliKelasNama: nama,
@@ -441,7 +441,7 @@ class GuruBerandaPage extends ConsumerWidget {
                               context: context,
                               ref: ref,
                               kelasId: kelasId,
-                              waliKelasNama: waliKelas ?? '',
+                              waliKelasNama: waliKelas,
                               belumLengkap: totalSiswa - siswaLengkap,
                             ),
                             icon: const Icon(Icons.send_outlined, size: 16),

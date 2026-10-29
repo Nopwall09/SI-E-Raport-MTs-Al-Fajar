@@ -1,5 +1,4 @@
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -10,6 +9,25 @@ import 'wali_kelas_repository.dart';
 /// dan menampilkannya langsung ke pratinjau / dialog cetak.
 class AbsensiPdfService {
   const AbsensiPdfService._();
+
+  static String _formatTanggalIndonesia(DateTime date) {
+    const bulan = [
+      '',
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember',
+    ];
+    return '${date.day} ${bulan[date.month]} ${date.year}';
+  }
 
   /// Menghasilkan berkas PDF rekapitulasi presensi satu kelas.
   static Future<Uint8List> buatDokumenPresensi({
@@ -32,7 +50,7 @@ class AbsensiPdfService {
     }
 
     final semesterLabel = semester.toLowerCase() == 'ganjil' ? 'GANJIL' : 'GENAP';
-    final tanggalCetak = DateFormat('dd MMMM yyyy', 'id_ID').format(DateTime.now());
+    final tanggalCetak = _formatTanggalIndonesia(DateTime.now());
 
     int totalSakit = 0;
     int totalIzin = 0;
