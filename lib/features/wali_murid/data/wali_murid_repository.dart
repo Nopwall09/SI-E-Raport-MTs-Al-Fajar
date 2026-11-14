@@ -188,6 +188,19 @@ class WaliMuridRepository {
 
       final rataRata = jumlahTerisi > 0 ? totalNilai / jumlahTerisi : null;
 
+      final validMapels = daftarNilai.where((m) => m.nilai != null).toList();
+      final histori = <double>[];
+      final labels = <String>[];
+      if (validMapels.length >= 2) {
+        for (final m in validMapels.take(5)) {
+          histori.add(m.nilai!.toDouble());
+          labels.add(
+            m.kode ??
+                (m.mapel.length > 4 ? m.mapel.substring(0, 4) : m.mapel),
+          );
+        }
+      }
+
       // 5. Catatan rapor & kehadiran jika ada
       final raporRow = await _db
           .from('rapor')
@@ -215,6 +228,8 @@ class WaliMuridRepository {
           izin: izin,
           alpa: alpa,
           catatanWali: catatan,
+          historiPerkembangan: histori,
+          labelPerkembangan: labels,
           daftarNilai: daftarNilai,
         ),
       );

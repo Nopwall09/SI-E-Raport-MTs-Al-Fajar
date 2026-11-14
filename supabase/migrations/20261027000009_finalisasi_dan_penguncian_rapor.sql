@@ -133,3 +133,8 @@ grant execute on function public.finalisasi_rapor(bigint, text) to authenticated
 
 revoke execute on function public.buka_kunci_rapor(bigint, text) from public, anon;
 grant execute on function public.buka_kunci_rapor(bigint, text) to authenticated;
+
+-- 6. Kebijakan akses baca data guru: agar siswa dan wali murid dapat membaca nama wali kelas di kartu rapor.
+drop policy if exists baca_guru_publik on public.guru;
+create policy baca_guru_publik on public.guru for select to authenticated using (true);
+
