@@ -1,4 +1,4 @@
-﻿# E-Raport MTs Al Fajar (mobile)
+# E-Raport MTs Al Fajar (mobile)
 
 Aplikasi Flutter (Android) untuk sistem E-Raport dan Portal Wali Murid
 MTs Al Fajar Kandat. Backend memakai Supabase (Auth, Postgres + RLS, Edge
