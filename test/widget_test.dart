@@ -67,6 +67,10 @@ void main() {
       300,
     );
     expect(find.text('Progres Nilai Kelas 7A (Wali Kelas)'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Siswa Contoh A'),
+      300,
+    );
     expect(find.text('Siswa Contoh A'), findsOneWidget);
   });
 

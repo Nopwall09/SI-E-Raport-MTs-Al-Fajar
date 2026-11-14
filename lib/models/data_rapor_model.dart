@@ -8,6 +8,7 @@ class DataRaporModel {
   final String semester; // 'ganjil' atau 'genap'
   final int mapelSelesai;
   final int totalMapel;
+  final String statusRapor; // 'draft', 'menunggu_acc', 'final'
 
   const DataRaporModel({
     required this.id,
@@ -17,10 +18,20 @@ class DataRaporModel {
     required this.semester,
     required this.mapelSelesai,
     required this.totalMapel,
+    this.statusRapor = 'draft',
   });
 
   /// Siap bila ada mapel dan semuanya sudah ada nilainya.
   bool get isSiap => totalMapel > 0 && mapelSelesai >= totalMapel;
 
-  String get status => isSiap ? 'Siap' : 'Belum Siap';
+  bool get isFinal => statusRapor == 'final';
+  bool get isMenungguAcc => statusRapor == 'menunggu_acc';
+
+  String get status => isFinal
+      ? 'Final (ACC)'
+      : isMenungguAcc
+          ? 'Menunggu ACC'
+          : isSiap
+              ? 'Siap'
+              : 'Belum Siap';
 }
