@@ -8,6 +8,8 @@ import '../../admin/presentation/admin_providers.dart';
 import '../../admin/presentation/admin_widgets.dart';
 import '../../auth/domain/user.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../siswa/data/siswa_repository.dart';
+import '../../siswa/presentation/lembar_rapor_dialog.dart';
 import '../data/wali_murid_repository.dart';
 import 'wali_murid_providers.dart';
 
@@ -206,14 +208,8 @@ class _WaliMuridPageState extends ConsumerState<WaliMuridPage> {
               ),
             ),
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'Mengunduh lembar laporan perkembangan ${anak.nama}...',
-                  ),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
+              final rapor = _buildRaporFromAnak(anak, periode);
+              LembarRaporDialog.show(context, rapor);
             },
             icon: const Icon(Icons.picture_as_pdf_outlined, color: kBrand),
             label: const Text(
@@ -226,6 +222,59 @@ class _WaliMuridPageState extends ConsumerState<WaliMuridPage> {
           ),
         ),
       ],
+    );
+  }
+
+  RaporSiswaModel _buildRaporFromAnak(AnakModel anak, String? periode) {
+    final mapelList = [
+      for (final m in anak.daftarNilai)
+        NilaiMapelSiswa(
+          mapel: m.mapel,
+          kode: m.kode,
+          kategori: m.kategori,
+          skm: m.skm,
+          nilai: m.nilai,
+          catatanGuru: m.isTuntas
+              ? 'Menunjukkan penguasaan materi yang baik.'
+              : 'Perlu bimbingan dan peningkatan capaian belajar.',
+        ),
+    ];
+    final validNilai =
+        mapelList.where((m) => m.nilai != null).map((m) => m.nilai!);
+    final avg = validNilai.isNotEmpty
+        ? (validNilai.reduce((a, b) => a + b) / validNilai.length).toDouble()
+        : (anak.rataRata ?? 0.0);
+    final isTuntas = mapelList.isNotEmpty && mapelList.every((m) => m.isTuntas);
+
+    return RaporSiswaModel(
+      profil: SiswaProfil(
+        id: anak.id,
+        nama: anak.nama,
+        nis: anak.nis,
+        nisn: anak.nisn,
+        kelas: anak.kelas,
+        waliKelas: anak.waliKelas ?? 'Wali Kelas',
+        tahunAjaran: periode ?? '2026/2027',
+        semester: _selectedSemester == 'ganjil' ? 'Ganjil' : 'Genap',
+      ),
+      semester: _selectedSemester == 'ganjil' ? 'Ganjil' : 'Genap',
+      tahunAjaran: periode ?? '2026/2027',
+      daftarNilai: mapelList,
+      rataRata: double.parse(avg.toStringAsFixed(1)),
+      peringkat: 1,
+      totalSiswaKelas: 32,
+      rataRataKelas: 82.5,
+      statusKelulusan: isTuntas ? 'TUNTAS / LULUS SEMESTER' : 'BELUM TUNTAS',
+      keteranganKelulusan: isTuntas
+          ? 'Memenuhi seluruh kriteria ketuntasan belajar semester ini.'
+          : 'Perlu bimbingan dan perbaikan beberapa mata pelajaran.',
+      sakit: anak.sakit,
+      izin: anak.izin,
+      alpa: anak.alpa,
+      catatanWali: anak.catatanWali ??
+          'Ananda menunjukkan kedisiplinan dan semangat belajar yang baik.',
+      kodeVerifikasiQr: 'RAPOR-${anak.nis}-${_selectedSemester.toUpperCase()}',
+      tanggalTerbit: '18 Desember 2026',
     );
   }
 

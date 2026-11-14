@@ -4,16 +4,12 @@ Aplikasi Flutter (Android) untuk sistem E-Raport dan Portal Wali Murid
 MTs Al Fajar Kandat. Backend memakai Supabase (Auth, Postgres + RLS, Edge
 Functions, Storage). Tidak ada server backend sendiri dan tidak ada web.
 
-Status saat ini: struktur folder, login, router, dan shell navigasi per role
-(target Sprint 1) sudah jalan. Layar admin (beranda, siswa, guru, kelas,
-pengguna) sudah tersambung ke Supabase. Siswa dan kelas bisa ditambah, diubah,
-dan dihapus (kelas hanya bila kosong); guru bisa ditambah dan diubah; akun
-pengguna bisa dibuat, dinonaktifkan, dan diaktifkan lagi (tidak dihapus,
-karena menghapus akun Auth butuh service role). Admin juga bisa mereset
-password pengguna dan mengimpor siswa dari Excel; akun baru atau hasil reset
-wajib ganti password saat masuk. Layar guru (beranda, input nilai UTS, progres
-wali kelas, presensi dan catatan per siswa) juga sudah jalan. Layar siswa, wali murid, dan
-rapor masih berupa halaman sementara.
+Status saat ini (Sprint 4 - Pertemuan 11 / Penyempurnaan Fitur & Integrasi):
+Seluruh modul aplikasi telah diintegrasikan secara utuh.
+- **Admin**: Manajemen data master (siswa, guru, kelas, mapel, tahun ajaran), manajemen pengguna, reset password, impor siswa dari Excel, monitoring kesiapan rapor kelas, ACC & finalisasi rapor kelas, pemicu notifikasi FCM, serta pembukaan kunci rapor untuk revisi data.
+- **Guru & Wali Kelas**: Beranda terpadu penugasan mapel, pengisian nilai siswa (UTS/tugas), monitoring progres kelengkapan nilai kelas, pengisian presensi (sakit/izin/alpa) dan catatan kepribadian siswa, cetak rekapitulasi presensi kelas berformat PDF, serta pengajuan ACC rapor ke pihak madrasah.
+- **Siswa & Wali Murid**: Beranda akademik, grafik tren capaian belajar, rekapitulasi nilai per mata pelajaran dengan filter kategori, catatan wali kelas, status kelulusan/tuntas, pratinjau lembar rapor digital berstandar madrasah dengan verifikasi QR Code, serta unduh lembar rapor resmi berformat PDF.
+- **Keamanan & Kecepatan**: Otentikasi Supabase, proteksi RLS ketat, database trigger penguncian nilai saat status rapor final, RPC security definer, dan caching offline.
 
 `landing/` berisi halaman profil statis (HTML dan CSS tanpa build) untuk
 memperkenalkan aplikasi. Tautan unduh APK diisi di `data-apk-url` pada

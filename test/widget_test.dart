@@ -104,16 +104,15 @@ void main() {
     expect(find.text('Grafik Perkembangan Berkala'), findsOneWidget);
   });
 
-  testWidgets(
-    'siswa memakai halaman perkembangan yang sama dengan wali murid',
-    (tester) async {
-      await _login(tester, 'siswa');
+  testWidgets('siswa masuk dan melihat beranda siswa serta tab rapor', (
+    tester,
+  ) async {
+    await _login(tester, 'siswa');
 
-      expect(find.text('Perkembangan Saya'), findsWidgets);
-      expect(find.text('Muhammad Farhan Al-Ghifari'), findsOneWidget);
-      expect(find.text('Rapor'), findsNothing);
-    },
-  );
+    expect(find.text('Beranda Siswa'), findsWidgets);
+    expect(find.text('Muhammad Farhan Al-Ghifari'), findsOneWidget);
+    expect(find.text('Rapor'), findsWidgets);
+  });
 
   testWidgets(
     'anak tanpa nilai: tidak ada data karangan, tampil pesan kosong',

@@ -7,6 +7,8 @@ import 'package:si_e_rapor_mts_al_fajar/features/nilai/data/nilai_repository.dar
 import 'package:si_e_rapor_mts_al_fajar/features/notifikasi/notifikasi_providers.dart';
 import 'package:si_e_rapor_mts_al_fajar/features/notifikasi/notifikasi_service.dart';
 import 'package:si_e_rapor_mts_al_fajar/features/nilai/presentation/nilai_providers.dart';
+import 'package:si_e_rapor_mts_al_fajar/features/siswa/data/siswa_repository.dart';
+import 'package:si_e_rapor_mts_al_fajar/features/siswa/presentation/siswa_providers.dart';
 import 'package:si_e_rapor_mts_al_fajar/features/wali_kelas/data/wali_kelas_repository.dart';
 import 'package:si_e_rapor_mts_al_fajar/features/wali_kelas/presentation/wali_kelas_providers.dart';
 import 'package:si_e_rapor_mts_al_fajar/features/wali_murid/data/wali_murid_repository.dart';
@@ -52,6 +54,41 @@ List<Override> testOverrides({String? signedInAs}) {
           ],
         ),
       ],
+    ),
+    siswaRaporProvider.overrideWith(
+      (ref) async => const RaporSiswaModel(
+        profil: SiswaProfil(
+          id: 1,
+          nama: 'Muhammad Farhan Al-Ghifari',
+          nis: '2026001',
+          kelas: 'VII-A',
+          waliKelas: 'Ust. Ahmad Fauzi, S.Pd.I',
+          tahunAjaran: '2026/2027',
+          semester: 'Ganjil',
+        ),
+        semester: 'Ganjil',
+        tahunAjaran: '2026/2027',
+        daftarNilai: [
+          NilaiMapelSiswa(
+            mapel: "Al-Qur'an Hadits",
+            nilai: 92,
+            skm: 75,
+            kategori: 'Agama',
+          ),
+        ],
+        rataRata: 87.8,
+        peringkat: 1,
+        totalSiswaKelas: 32,
+        rataRataKelas: 82.0,
+        statusKelulusan: 'TUNTAS / LULUS SEMESTER',
+        keteranganKelulusan: 'Tuntas semester berjalan.',
+        sakit: 1,
+        izin: 0,
+        alpa: 0,
+        catatanWali: 'Pertahankan prestasi belajar.',
+        kodeVerifikasiQr: 'RAPOR-2026001-GANJIL',
+        tanggalTerbit: '18 Desember 2026',
+      ),
     ),
   ];
 }
