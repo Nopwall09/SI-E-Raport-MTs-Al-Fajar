@@ -87,16 +87,27 @@ Deno.serve(async (req) => {
   if (b.semester !== "ganjil" && b.semester !== "genap")
     return json({ error: "semester harus ganjil atau genap" }, 400);
 
-  // Hanya wali kelas dari kelas itu (guru aktif) yang boleh memicu pengiriman.
-  const { data: kelas } = await admin
-    .from("kelas")
-    .select("id, tahun_ajaran(tahun), guru:wali_kelas_id(user_id, users(is_active))")
-    .eq("id", b.kelas_id)
-    .maybeSingle();
+  // Wali kelas dari kelas itu (guru aktif) atau admin yang boleh memicu pengiriman.
+  const [{ data: kelas }, { data: callerProfile }] = await Promise.all([
+    admin
+      .from("kelas")
+      .select("id, tahun_ajaran(tahun), guru:wali_kelas_id(user_id, users(is_active))")
+      .eq("id", b.kelas_id)
+      .maybeSingle(),
+    admin
+      .from("users")
+      .select("role, is_active")
+      .eq("id", caller.user.id)
+      .maybeSingle(),
+  ]);
+
+  const isAdmin = callerProfile?.role === "admin" && callerProfile?.is_active;
   // deno-lint-ignore no-explicit-any
   const wali = (kelas as any)?.guru;
-  if (!wali || wali.user_id !== caller.user.id || !wali.users?.is_active)
-    return json({ error: "Hanya wali kelas dari kelas ini" }, 403);
+  const isWali = wali && wali.user_id === caller.user.id && wali.users?.is_active;
+
+  if (!isAdmin && !isWali)
+    return json({ error: "Hanya wali kelas atau admin yang dapat mengirim notifikasi" }, 403);
 
   const raw = Deno.env.get("FIREBASE_SERVICE_ACCOUNT");
   if (!raw) return json({ error: "Notifikasi belum dikonfigurasi di server" }, 500);

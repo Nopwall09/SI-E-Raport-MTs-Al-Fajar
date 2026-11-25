@@ -28,13 +28,14 @@ begin
     raise exception 'Hanya wali kelas atau admin yang dapat mengajukan ACC rapor kelas ini';
   end if;
 
-  update public.rapor r
-  set status = 'menunggu_acc'
+  -- Pastikan semua siswa di kelas ini memiliki entri rapor berstatus 'menunggu_acc'
+  insert into public.rapor (kelas_siswa_id, semester, status)
+  select ks.id, p_semester, 'menunggu_acc'
   from public.kelas_siswa ks
-  where r.kelas_siswa_id = ks.id
-    and ks.kelas_id = p_kelas_id
-    and r.semester = p_semester
-    and r.status = 'draft';
+  where ks.kelas_id = p_kelas_id
+  on conflict (kelas_siswa_id, semester) do update
+  set status = 'menunggu_acc'
+  where public.rapor.status = 'draft';
 end $$;
 
 -- 3. Finalisasi / ACC Rapor: Rapor disahkan dan dikunci permanen.
@@ -47,6 +48,7 @@ declare
   v_caller uuid := auth.uid();
   v_is_admin boolean;
   v_is_wali boolean;
+  v_finalized_by uuid;
   v_skm int;
 begin
   select public.is_admin() into v_is_admin;
@@ -67,16 +69,25 @@ begin
   where k.id = p_kelas_id
   limit 1;
 
-  update public.rapor r
-  set status = 'final',
-      skm_snapshot = coalesce(v_skm, r.skm_snapshot, 75),
-      finalized_at = now(),
-      finalized_by = v_caller
+  -- Pastikan finalized_by valid di public.users (menghindari error FK jika dipanggil service account)
+  select id into v_finalized_by
+  from public.users
+  where id = v_caller;
+
+  -- Upsert: pastikan semua siswa di kelas ini statusnya jadi 'final'
+  insert into public.rapor (
+    kelas_siswa_id, semester, status, skm_snapshot, finalized_at, finalized_by
+  )
+  select 
+    ks.id, p_semester, 'final', coalesce(v_skm, 75), now(), v_finalized_by
   from public.kelas_siswa ks
-  where r.kelas_siswa_id = ks.id
-    and ks.kelas_id = p_kelas_id
-    and r.semester = p_semester
-    and r.status in ('draft', 'menunggu_acc');
+  where ks.kelas_id = p_kelas_id
+  on conflict (kelas_siswa_id, semester) do update
+  set status = 'final',
+      skm_snapshot = coalesce(v_skm, public.rapor.skm_snapshot, 75),
+      finalized_at = now(),
+      finalized_by = v_finalized_by
+  where public.rapor.status in ('draft', 'menunggu_acc');
 end $$;
 
 -- 4. Buka Kunci Rapor (UC-13): Khusus Admin jika ada revisi nilai/presensi.
@@ -122,7 +133,7 @@ end $$;
 
 drop trigger if exists trg_kunci_detnilai on public.detnilai;
 create trigger trg_kunci_detnilai
-before update or delete on public.detnilai
+before insert or update or delete on public.detnilai
 for each row execute function public.kunci_detnilai_saat_rapor_final();
 
 revoke execute on function public.ajukan_acc_rapor(bigint, text) from public, anon;
