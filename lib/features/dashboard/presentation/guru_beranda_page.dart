@@ -704,8 +704,16 @@ class _KartuSiswaWali extends ConsumerWidget {
                     style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ),
-                if (s.terkunci)
+                if (s.isFinal)
                   const Text('Rapor final', style: TextStyle(color: kMuted))
+                else if (s.isMenungguAcc)
+                  const Text(
+                    'Menunggu ACC',
+                    style: TextStyle(
+                      color: Color(0xFFD97706),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  )
                 else
                   TextButton.icon(
                     onPressed: () => isiPresensi(context, ref, s),
