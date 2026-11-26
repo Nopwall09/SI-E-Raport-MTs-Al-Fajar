@@ -110,7 +110,8 @@ void main() {
     await _login(tester, 'siswa');
 
     expect(find.text('Beranda Siswa'), findsWidgets);
-    expect(find.text('Muhammad Farhan Al-Ghifari'), findsOneWidget);
+    // Sapaan memakai nama akun yang login, bukan nama di data rapor.
+    expect(find.text('Siswa Contoh'), findsOneWidget);
     expect(find.text('Rapor'), findsWidgets);
   });
 
