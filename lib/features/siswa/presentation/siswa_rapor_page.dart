@@ -9,7 +9,7 @@ import 'lembar_rapor_dialog.dart';
 import 'siswa_providers.dart';
 
 /// Halaman Rapor Siswa: Menampilkan riwayat nilai mata pelajaran per semester,
-/// status kelulusan/peringkat, dan opsi unduh lembar rapor digital.
+/// status kelulusan, dan opsi unduh lembar rapor digital.
 class SiswaRaporPage extends ConsumerStatefulWidget {
   const SiswaRaporPage({super.key});
 
@@ -104,7 +104,17 @@ class _SiswaRaporPageState extends ConsumerState<SiswaRaporPage> {
         ),
         const SizedBox(height: 16),
 
-        // 2. KARTU STATUS KELULUSAN & PERINGKAT KELAS
+        if (rapor.daftarNilai.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 32),
+            child: Text(
+              'Belum ada nilai untuk semester ini.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: kMuted),
+            ),
+          )
+        else ...[
+        // 2. KARTU STATUS KELULUSAN
         FadeSlideIn(
           index: 1,
           child: Container(
@@ -201,20 +211,9 @@ class _SiswaRaporPageState extends ConsumerState<SiswaRaporPage> {
                 Row(
                   children: [
                     _itemStatistikKecil(
-                      label: 'Peringkat Kelas',
-                      value: 'Ke-${rapor.peringkat}',
-                      subtext: 'dari ${rapor.totalSiswaKelas} Siswa',
-                    ),
-                    Container(
-                      height: 36,
-                      width: 1,
-                      color: Colors.white.withValues(alpha: 0.25),
-                      margin: const EdgeInsets.symmetric(horizontal: 12),
-                    ),
-                    _itemStatistikKecil(
                       label: 'Rata-Rata Nilai',
                       value: '${rapor.rataRata}',
-                      subtext: 'Rata-rata kelas: ${rapor.rataRataKelas}',
+                      subtext: 'Nilai UTS',
                     ),
                     Container(
                       height: 36,
@@ -314,7 +313,7 @@ class _SiswaRaporPageState extends ConsumerState<SiswaRaporPage> {
                 ),
               ),
               Text(
-                'SKM: 75',
+                'SKM: ${rapor.daftarNilai.first.skm}',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -416,6 +415,7 @@ class _SiswaRaporPageState extends ConsumerState<SiswaRaporPage> {
             ),
           ),
         ),
+        ],
       ],
     );
   }

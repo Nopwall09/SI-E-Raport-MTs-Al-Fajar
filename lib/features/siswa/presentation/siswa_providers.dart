@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers.dart';
-import '../../admin/data/admin_repository.dart';
 import '../../admin/presentation/admin_providers.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../data/siswa_repository.dart';
@@ -19,9 +18,7 @@ final siswaRaporProvider = FutureProvider<RaporSiswaModel>((ref) async {
   ref.watch(authControllerProvider.select((u) => u.value?.id));
   final semester = ref.watch(siswaSemesterFilterProvider);
 
-  final ta = await ref.watch(tahunAjaranAktifProvider.future).catchError(
-        (_) => const TahunAjaranAktif(1, '2026/2027', 'ganjil'),
-      );
+  final ta = await ref.watch(tahunAjaranAktifProvider.future);
 
   return ref.watch(siswaRepositoryProvider).getRaporSiswa(
         semester: semester,

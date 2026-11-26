@@ -315,9 +315,8 @@ class PdfRaporService {
     builder.drawText('( ......................................... )', 105, curY, size: 8.5, align: _TextAlign.center);
 
     // Kolom 2: Wali Kelas
-    builder.drawText(p.waliKelas ?? 'Ust. Ahmad Fauzi, S.Pd.I', 285, curY, isBold: true, size: 8.5, align: _TextAlign.center);
+    builder.drawText(p.waliKelas ?? '-', 285, curY, isBold: true, size: 8.5, align: _TextAlign.center);
     builder.drawLine(225, curY - 2, 345, curY - 2, width: 0.6);
-    builder.drawText('NIP. 198504122011011003', 285, curY - 11, size: 7.5, align: _TextAlign.center);
 
     // Kolom 3: Kepala Madrasah
     builder.drawText(p.kepalaMadrasah, 460, curY, isBold: true, size: 8.5, align: _TextAlign.center);

@@ -548,7 +548,7 @@ class _LembarRaporDialogState extends State<LembarRaporDialog> {
                                     const Text('Wali Kelas,', style: TextStyle(fontSize: 9.5)),
                                     const SizedBox(height: 46),
                                     Text(
-                                      p.waliKelas ?? 'Ust. Ahmad Fauzi, S.Pd.I',
+                                      p.waliKelas ?? '-',
                                       style: const TextStyle(
                                         fontSize: 9.5,
                                         fontWeight: FontWeight.bold,
@@ -556,7 +556,6 @@ class _LembarRaporDialogState extends State<LembarRaporDialog> {
                                       ),
                                       textAlign: TextAlign.center,
                                     ),
-                                    const Text('NIP. 198504122011011003', style: TextStyle(fontSize: 8)),
                                   ],
                                 ),
                               ),

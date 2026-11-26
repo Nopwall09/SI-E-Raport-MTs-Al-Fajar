@@ -197,6 +197,7 @@ class _WaliMuridPageState extends ConsumerState<WaliMuridPage> {
         const SizedBox(height: 20),
 
         // Tombol Cetak / Unduh Rapor
+        if (anak.daftarNilai.any((m) => m.nilai != null))
         FadeSlideIn(
           index: 7,
           child: OutlinedButton.icon(
@@ -234,9 +235,6 @@ class _WaliMuridPageState extends ConsumerState<WaliMuridPage> {
           kategori: m.kategori,
           skm: m.skm,
           nilai: m.nilai,
-          catatanGuru: m.isTuntas
-              ? 'Menunjukkan penguasaan materi yang baik.'
-              : 'Perlu bimbingan dan peningkatan capaian belajar.',
         ),
     ];
     final validNilai =
@@ -253,7 +251,7 @@ class _WaliMuridPageState extends ConsumerState<WaliMuridPage> {
         nis: anak.nis,
         nisn: anak.nisn,
         kelas: anak.kelas,
-        waliKelas: anak.waliKelas ?? 'Wali Kelas',
+        waliKelas: anak.waliKelas,
         tahunAjaran: periode ?? '2026/2027',
         semester: _selectedSemester == 'ganjil' ? 'Ganjil' : 'Genap',
       ),
@@ -261,9 +259,6 @@ class _WaliMuridPageState extends ConsumerState<WaliMuridPage> {
       tahunAjaran: periode ?? '2026/2027',
       daftarNilai: mapelList,
       rataRata: double.parse(avg.toStringAsFixed(1)),
-      peringkat: 1,
-      totalSiswaKelas: 32,
-      rataRataKelas: 82.5,
       statusKelulusan: isTuntas ? 'TUNTAS / LULUS SEMESTER' : 'BELUM TUNTAS',
       keteranganKelulusan: isTuntas
           ? 'Memenuhi seluruh kriteria ketuntasan belajar semester ini.'
@@ -271,8 +266,7 @@ class _WaliMuridPageState extends ConsumerState<WaliMuridPage> {
       sakit: anak.sakit,
       izin: anak.izin,
       alpa: anak.alpa,
-      catatanWali: anak.catatanWali ??
-          'Ananda menunjukkan kedisiplinan dan semangat belajar yang baik.',
+      catatanWali: anak.catatanWali ?? '-',
       kodeVerifikasiQr: 'RAPOR-${anak.nis}-${_selectedSemester.toUpperCase()}',
       tanggalTerbit: '18 Desember 2026',
     );

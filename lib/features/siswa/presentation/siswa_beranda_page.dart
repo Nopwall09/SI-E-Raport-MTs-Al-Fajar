@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/theme.dart';
 import '../../../widgets/motion.dart';
-import '../../../widgets/trend_chart_widget.dart';
 import '../../admin/presentation/admin_widgets.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../data/siswa_repository.dart';
@@ -12,7 +11,7 @@ import 'lembar_rapor_dialog.dart';
 import 'siswa_providers.dart';
 
 /// Halaman Beranda khusus untuk akun Siswa.
-/// Memberikan ringkasan akademik cepat, peringkat kelas, grafik tren perkembangan,
+/// Memberikan ringkasan akademik cepat,
 /// dan akses instan untuk mengunduh lembar rapor digital.
 class SiswaBerandaPage extends ConsumerWidget {
   const SiswaBerandaPage({super.key});
@@ -115,7 +114,17 @@ class SiswaBerandaPage extends ConsumerWidget {
         ),
         const SizedBox(height: 16),
 
-        // 2. KARTU UTAMA: PERINGKAT & STATUS KELULUSAN
+        if (rapor.daftarNilai.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 32),
+            child: Text(
+              'Belum ada nilai untuk semester ini.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: kMuted),
+            ),
+          )
+        else ...[
+        // 2. KARTU UTAMA: STATUS KELULUSAN
         FadeSlideIn(
           index: 1,
           child: Container(
@@ -177,37 +186,8 @@ class SiswaBerandaPage extends ConsumerWidget {
                   children: [
                     Expanded(
                       flex: 5,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Peringkat ${rapor.peringkat}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 26,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          Text(
-                            'dari ${rapor.totalSiswaKelas} Siswa di Kelas',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.85),
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      height: 48,
-                      width: 1,
-                      color: Colors.white.withValues(alpha: 0.25),
-                    ),
-                    Expanded(
-                      flex: 5,
                       child: Padding(
-                        padding: const EdgeInsets.only(left: 16),
+                        padding: EdgeInsets.zero,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -372,54 +352,6 @@ class SiswaBerandaPage extends ConsumerWidget {
         ),
         const SizedBox(height: 18),
 
-        // 4. GRAFIK TREN PERKEMBANGAN BELAJAR
-        FadeSlideIn(
-          index: 3,
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(kRadiusCard),
-              border: Border.all(color: kBorder),
-              boxShadow: kCardShadow,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
-                    Text(
-                      'Tren Perkembangan Nilai Siswa',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13.5,
-                        color: kText,
-                      ),
-                    ),
-                    Text(
-                      'Semester Ganjil',
-                      style: TextStyle(fontSize: 11, color: kMuted),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                const TrendChartWidget(
-                  values: [82.0, 84.5, 85.0, 86.8, 87.8],
-                  labels: ['UH 1', 'UH 2', 'PTS', 'UH 3', 'PAS'],
-                  height: 95,
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  '* Grafik menunjukkan konsistensi tren kenaikan nilai ulangan harian dan evaluasi tengah semester.',
-                  style: TextStyle(fontSize: 10.5, color: kMuted, fontStyle: FontStyle.italic),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-
         // 5. MATA PELAJARAN UNGGULAN (TOP NILAI)
         FadeSlideIn(
           index: 4,
@@ -513,6 +445,7 @@ class SiswaBerandaPage extends ConsumerWidget {
             ),
           ),
         ),
+        ],
       ],
     );
   }
